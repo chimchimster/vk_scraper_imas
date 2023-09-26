@@ -1,0 +1,1 @@
+from .decorators import do_post_request_to_vk_api

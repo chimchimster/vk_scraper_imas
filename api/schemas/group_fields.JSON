@@ -1,0 +1,25 @@
+{
+  "group_fields": [
+    "id",
+    "name",
+    "screen_name",
+    "is_closed",
+    "deactivated",
+    "type",
+    "photo_200",
+    "activity",
+    "age_limits",
+    "city",
+    "country",
+    "description",
+    "is_favorite",
+    "member_status",
+    "members_count",
+    "site",
+    "place",
+    "status",
+    "verified",
+    "wall",
+    "wiki_page"
+  ]
+}
