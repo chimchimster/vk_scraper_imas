@@ -6,7 +6,7 @@ from .common import CityInfo, CountryInfo, PlaceInfo
 
 class SubscribedToGroup(Base):
     id: int
-    name: str
+    name: Optional[str] = None
     screen_name: Optional[Union[str, None]] = None
     is_closed: Optional[Union[int, None]] = None
     deactivated: Optional[Union[str, None]] = None

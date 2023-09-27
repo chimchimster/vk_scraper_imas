@@ -1,4 +1,11 @@
-from .utils import do_post_request_to_vk_api
+import asyncio
+import pathlib
+
+from pydantic import ValidationError
+
+from vk_scraper_imas.api.models import VKUser, SubscribedToGroup, ResponseModel, SubscribedToUser
+from vk_scraper_imas.utils import read_schema
+from vk_scraper_imas.api.utils import do_post_request_to_vk_api
 
 
 class APIAsyncRequests:
@@ -53,12 +60,16 @@ class APIAsyncRequests:
 #     user_fields = user_fields.get('user_fields')
 #     group_fields = await read_schema(path_to_groups_JSON)
 #     group_fields = group_fields.get('group_fields')
-#
+#     _user_ids = ['id226245594', 'dmitriy_panfilov', 'angieozerova', 'dosia1488', 'favnart', 'aslushnikov']
 #     data = await req.get_users_info_by_vk_ids(user_ids=_user_ids, fields=user_fields)
 #     data1 = await req.get_subscriptions_of_user_by_vk_id(226245594, fields=user_fields+group_fields)
-#
+#     r = data
+#     print(r)
+#     print(type(r))
+#     res = ResponseModel.model_validate(r)
+#     print(res)
 #     lst = []
-#     for usr in data1.get('response').get('items'):
+#     for usr in res.response:
 #         print(usr)
 #         try:
 #             obj = VKUser.model_validate(usr)

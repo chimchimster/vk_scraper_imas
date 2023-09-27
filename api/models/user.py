@@ -18,11 +18,10 @@ class VKUser(Base):
     books: Optional[Union[str, None]] = None
     career: Optional[Union[CareerInfo, List]] = None
     city: Optional[Union[CityInfo, List[CityInfo]]] = None
-    connections: Optional[Union[ConnectionsInfo, List]]
+    connections: Optional[Union[ConnectionsInfo, List]] = None
     contacts: Optional[Union[ContactsInfo, List]] = None
     counters: Optional[Union[CountersInfo, List]] = None
     country: Optional[Union[CountryInfo, List]] = None
-    crop_photo: Optional[Union[dict, None]] = None
     domain: Optional[Union[str, None]] = None
     education: Optional[Union[EducationInfo, List]] = None
     followers_count: Optional[Union[int, None]] = None
