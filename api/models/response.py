@@ -7,6 +7,6 @@ from .user_subscriptions import SubscribedToUser
 
 class ResponseModel(Base):
     count: Optional[int] = None
-    response: Optional[List[Union[VKUser, SubscribedToUser, SubscribedToGroup, List, Dict]]] = None
+    response: Optional[Union[Dict, List, List[Union[VKUser, SubscribedToUser, SubscribedToGroup, List]]]] = None
     items: Optional[Union[VKUser, SubscribedToUser, SubscribedToGroup, List]] = None
 
