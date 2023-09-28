@@ -25,7 +25,7 @@ def do_post_request_to_vk_api(func: Optional[Callable[..., Awaitable[None]]]):
 
                         return response_json
                     else:
-                        sys.stderr.write(f"HTTP POST request failed with status {response.status}")
+                        sys.stderr.write(f"HTTP POST завершился со статус кодом {response.status}")
 
         except VKAPIException as vk_api_exc:
             sys.stderr.write(str(vk_api_exc))

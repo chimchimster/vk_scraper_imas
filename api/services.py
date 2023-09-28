@@ -46,7 +46,7 @@ class APIAsyncRequests:
     async def form_request_string(self, method: str, **kwargs) -> str:
 
         kwargs = [f'{key}={val}&' for key, val in kwargs.items()]
-
+        print(self.API_LINK + """{}?{}""".format(method, ''.join(kwargs)[:-1]))
         return self.API_LINK + """{}?{}""".format(method, ''.join(kwargs)[:-1])
 
 

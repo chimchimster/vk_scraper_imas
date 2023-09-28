@@ -1,2 +1,3 @@
 .env
 scarper/token/schemas/tokens.JSON
+scarper/token/rate_limits/states.db
