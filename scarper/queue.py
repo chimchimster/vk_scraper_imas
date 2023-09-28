@@ -9,6 +9,7 @@ from vk_scraper_imas.utils import read_schema
 from vk_scraper_imas.scarper import connector
 from .tasks import TasksDistributor
 from vk_scraper_imas.api.models import ResponseModel, VKUser, SubscribedToGroup
+from token.rate_limits import APIRateLimitsValidator
 
 response_model = ResponseModel()
 
@@ -19,10 +20,17 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue):
 
     task_distributor = TasksDistributor()
 
+    rate_limited = await read_schema(connector.schemas.rate_limited, 'rate_limited')
+
     while True:
 
         tasks = await tasks_queue.get()
         token = await token_queue.get()
+
+        if tasks.model.__name__ in rate_limited:
+            # TODO: VALIDATION OF TOKENS
+            validator = APIRateLimitsValidator(tasks.model.__name__, token)
+            await validator.validate()
 
         async_tasks = [asyncio.create_task(
                 task_distributor.call_api_method(

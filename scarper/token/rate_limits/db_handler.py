@@ -1,79 +1,91 @@
-import sys
 import asyncio
-import aiosqlite
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
+import time
 
-from engine import engine_sqlite3
+from sqlalchemy import select, update
 from models import Token, VKObject, State
-
-
-AsyncSessionLocal = sessionmaker(
-    engine_sqlite3.engine, class_=AsyncSession, expire_on_commit=False
-)
+from decorators import execute_transaction
 
 
 class APIStateDB:
 
     @staticmethod
-    async def insert_new_token(token: str):
+    @execute_transaction(insert=True)
+    async def insert_token(token: str, **kwargs):
+        session = kwargs.pop('session')
 
-        await engine_sqlite3.create_bd_if_not_exists()
+        has_token = await session.execute(select(Token).filter_by(token=token))
+        has_token = has_token.scalar()
 
-        async with AsyncSessionLocal() as session:
-            async with session.begin() as transaction:
-                try:
-                    new_token = Token(token=token)
-                    print(new_token)
-                    session.add(new_token)
-                    await transaction.commit()
-                except Exception as e:
-                    await transaction.rollback()
-                    sys.stderr.write(f'Транзакция завершилась неудачно: {e}')
+        if not has_token:
+            return Token(token=token)
+        return None
 
     @staticmethod
-    async def insert_new_vk_object(vk_obj_name: str):
+    @execute_transaction(insert=True)
+    async def insert_vk_object(vk_obj_name: str, **kwargs):
+        session = kwargs.pop('session')
 
-        await engine_sqlite3.create_bd_if_not_exists()
+        has_vk_object = await session.execute(select(VKObject).filter_by(object_name=vk_obj_name))
+        has_vk_object = has_vk_object.scalar()
 
-        async with AsyncSessionLocal() as session:
-            async with session.begin() as transaction:
-                try:
-                    new_vk_obj = VKObject(object_name=vk_obj_name)
-                    session.add(new_vk_obj)
-                    await transaction.commit()
-                except Exception as e:
-                    await transaction.rollback()
-                    sys.stderr.write(f'Транзакция завершилась неудачно: {e}')
+        if not has_vk_object:
+            return VKObject(object_name=vk_obj_name)
+        return None
 
     @staticmethod
-    async def create_new_state(vk_obj_name: str, token: str):
+    @execute_transaction(insert=True)
+    async def create_state(vk_obj_name: str, token: str, **kwargs):
+        session = kwargs.pop('session')
 
-        await engine_sqlite3.create_bd_if_not_exists()
+        token = await session.execute(select(Token).filter_by(token=token))
+        vk_object = await session.execute(select(VKObject).filter_by(object_name=vk_obj_name))
 
-        async with AsyncSessionLocal() as session:
-            async with session.begin() as transaction:
-                try:
+        token = token.scalar()
+        vk_object = vk_object.scalar()
 
-                    token = await session.execute(select(Token).filter_by(token=token))
-                    vk_object = await session.execute(select(VKObject).filter_by(object_name=vk_obj_name))
+        if not token or not vk_object:
+            return None
 
-                    token = token.scalar_one_or_none()
-                    vk_object = vk_object.scalar_one_or_none()
+        has_state = await session.execute(select(State).filter_by(token_id=token.id, vk_object_id=vk_object.id))
+        has_state = has_state.scalar()
 
-                    new_state = State(token_id=token.id, vk_object_id=vk_object.id)
-                    session.add(new_state)
-                    await transaction.commit()
-                except Exception as e:
-                    await transaction.rollback()
-                    sys.stderr.write(f'Транзакция завершилась неудачно: {e}')
+        if not has_state:
+            return State(token_id=token.id, vk_object_id=vk_object.id)
+        return None
+
+    @staticmethod
+    @execute_transaction(update=True)
+    async def update_state(vk_obj_name: str, token: str, expired=False, **kwargs):
+        session = kwargs.pop('session')
+
+        token = await session.execute(select(Token).filter_by(token=token))
+        vk_object = await session.execute(select(VKObject).filter_by(object_name=vk_obj_name))
+
+        token = token.scalar()
+        vk_object = vk_object.scalar()
+
+        if not token or not vk_object:
+            return None
+
+        has_state = await session.execute(select(State).filter_by(token_id=token.id, vk_object_id=vk_object.id))
+        has_state = has_state.scalar()
+
+        if not expired and has_state:
+            return (update(State)
+                    .where(State.vk_object_id == vk_object.id)
+                    .where(State.token_id == token.id)
+                    .values(
+                requests=State.requests + 1,
+                last_use_unix=int(time.time())
+            ))
+        elif has_state:
+            return (update(State)
+                    .where(State.vk_object_id == vk_object.id)
+                    .where(State.token_id == token.id)
+                    .values(
+                expired=expired,
+                expired_at_unix=int(time.time())
+            ))
+        return None
 
 
-async def main():
-
-    a = APIStateDB()
-
-if __name__ == '__main__':
-
-    asyncio.run(main())

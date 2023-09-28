@@ -1,5 +1,6 @@
+import time
 from datetime import datetime
-from sqlalchemy import Integer, String, Text, DateTime, Boolean, Column, ForeignKey, UniqueConstraint
+from sqlalchemy import Integer, BigInteger, String, Text, DateTime, Boolean, Column, ForeignKey, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -28,16 +29,21 @@ class VKObject(Base):
 
     state = relationship('State', back_populates='vk_object')
 
-    __table__args__ = (
+    __table_args__ = (
         UniqueConstraint('object_name', name='uq_object_name'),
     )
+
 
 class State(Base):
     __tablename__ = 'state'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+
     expired = Column(Boolean, default=False)
-    last_use = Column(DateTime, default=datetime.utcnow())
+    expired_at_unix = Column(BigInteger)
+    last_use_unix = Column(BigInteger, default=time.time())
+
+    requests = Column(Integer, default=0)
 
     token_id = Column(Integer, ForeignKey('tokens.id'))
     tokens = relationship('Token', back_populates='state')
