@@ -21,7 +21,7 @@ class TaskObject:
         return self.__coroutine_name
 
     @property
-    def model(self) -> Union[VKUser, SubscribedToGroup, SubscribedToUser]:
+    def model(self) -> Type[VKUser] | Type[SubscribedToGroup] | None:
         return self.__model
 
     @property
