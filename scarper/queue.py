@@ -9,7 +9,8 @@ from vk_scraper_imas.utils import read_schema
 from vk_scraper_imas.scarper import connector
 from .tasks import TasksDistributor
 from vk_scraper_imas.api.models import ResponseModel, VKUser, SubscribedToGroup
-from token.rate_limits import APIRateLimitsValidator
+from vk_scraper_imas.scarper.token.rate_limits import APIRateLimitsValidator
+from vk_scraper_imas.api.utils.signals import ResponseSignal
 
 response_model = ResponseModel()
 
@@ -27,18 +28,39 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue):
         tasks = await tasks_queue.get()
         token = await token_queue.get()
 
-        if tasks.model.__name__ in rate_limited:
-            # TODO: VALIDATION OF TOKENS
-            validator = APIRateLimitsValidator(tasks.model.__name__, token)
-            await validator.validate()
+        task_name = tasks.model.__name__
 
-        async_tasks = [asyncio.create_task(
+        if task_name in rate_limited:
+
+            # TODO: VALIDATION OF TOKENS
+
+            validator = APIRateLimitsValidator(task_name, token)
+            await validator.validate_state_before_request()
+
+        async_tasks = [
+            asyncio.create_task(
                 task_distributor.call_api_method(
                     task.coroutine_name, task.user_ids, fields=task.fields, token=token,
                 )
             ) for task in tasks]
 
         result_responses = await asyncio.gather(*async_tasks)
+
+        has_signal = isinstance(result_responses[-1], ResponseSignal)
+
+        if task_name in rate_limited:
+            print(result_responses[-1])
+            validator = APIRateLimitsValidator(task_name, token)
+            validation_has_been_passed = await validator.validate_state_after_request(signal=has_signal)
+
+            if not validation_has_been_passed:
+                for task in tasks:
+                    await tasks_queue.put(task)
+
+                await token_queue.put(token)
+                await asyncio.sleep(1)
+
+                continue
 
         mapping_responses = map(lambda responses: response_model.model_validate(responses), result_responses)
 

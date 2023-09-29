@@ -2,11 +2,14 @@ import asyncio
 import time
 
 from sqlalchemy import select, update
-from models import Token, VKObject, State
-from decorators import execute_transaction
+from .models import Token, VKObject, State
+from .decorators import execute_transaction
+from .signals import ValidationPassed, ValidationFailed
 
 
 class APIStateDB:
+
+    _validation_instance = None
 
     @staticmethod
     @execute_transaction(insert=True)
@@ -53,9 +56,8 @@ class APIStateDB:
             return State(token_id=token.id, vk_object_id=vk_object.id)
         return None
 
-    @staticmethod
     @execute_transaction(update=True)
-    async def update_state(vk_obj_name: str, token: str, expired=False, **kwargs):
+    async def update_state(self, vk_obj_name: str, token: str, expired=False, **kwargs):
         session = kwargs.pop('session')
 
         token = await session.execute(select(Token).filter_by(token=token))
@@ -70,22 +72,56 @@ class APIStateDB:
         has_state = await session.execute(select(State).filter_by(token_id=token.id, vk_object_id=vk_object.id))
         has_state = has_state.scalar()
 
-        if not expired and has_state:
+        if not has_state:
+            return None
+
+        print(has_state.expired)
+        if has_state.expired:
+            now = int(time.time())
+            last_use = int(has_state.last_use_unix)
+
+            if now - last_use > 84000:
+
+                self._validation_instance = ValidationPassed()
+
+                return (update(State)
+                .where(State.vk_object_id == vk_object.id)
+                .where(State.token_id == token.id)
+                .values(
+                    expired=expired,
+                ))
+
+            self._validation_instance = ValidationFailed()
+
+            return None
+
+        if not expired and not has_state.expired:
+
+            self._validation_instance = ValidationPassed()
+
             return (update(State)
-                    .where(State.vk_object_id == vk_object.id)
-                    .where(State.token_id == token.id)
-                    .values(
+            .where(State.vk_object_id == vk_object.id)
+            .where(State.token_id == token.id)
+            .values(
                 requests=State.requests + 1,
                 last_use_unix=int(time.time())
             ))
-        elif has_state:
+
+        elif expired and not has_state.expired:
+
+            self._validation_instance = ValidationFailed()
+
             return (update(State)
-                    .where(State.vk_object_id == vk_object.id)
-                    .where(State.token_id == token.id)
-                    .values(
+            .where(State.vk_object_id == vk_object.id)
+            .where(State.token_id == token.id)
+            .values(
                 expired=expired,
                 expired_at_unix=int(time.time())
             ))
         return None
+
+    @property
+    def validation_instance(self) -> bool:
+        return self._validation_instance
 
 

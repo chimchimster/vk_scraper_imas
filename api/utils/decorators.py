@@ -3,6 +3,7 @@ import sys
 from functools import wraps
 from typing import Awaitable, Optional, Callable
 from vk_scraper_imas.api.exceptions import VKAPIException
+from .signals import ResponseSignal
 import aiohttp
 
 
@@ -21,9 +22,11 @@ def do_post_request_to_vk_api(func: Optional[Callable[..., Awaitable[None]]]):
                         response_str = await response.text()
                         response_json = json.loads(response_str)
 
-                        await check_errors(response_json)
+                        signal = await check_errors(response_json)
 
-                        return response_json
+                        if not signal:
+                            return response_json
+                        return signal
                     else:
                         sys.stderr.write(f"HTTP POST завершился со статус кодом {response.status}")
 
@@ -37,3 +40,9 @@ async def check_errors(response_json):
     if response_json.get('error'):
         error_code = response_json['error']['error_code']
         sys.stderr.write(str(VKAPIException(error_code)))
+
+        if VKAPIException(error_code) == 29:
+            return ResponseSignal()
+
+    return ResponseSignal()
+
