@@ -1,6 +1,3 @@
-import asyncio
-
-
 from typing import List, Awaitable, Type, Union
 from vk_scraper_imas.api.services import APIAsyncRequests
 from vk_scraper_imas.api.models import VKUser, SubscribedToGroup, SubscribedToUser

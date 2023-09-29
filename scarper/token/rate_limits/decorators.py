@@ -2,6 +2,7 @@ import sys
 from functools import wraps
 from typing import Awaitable, Callable, Optional
 
+from sqlalchemy import Update, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
@@ -24,11 +25,11 @@ def execute_transaction(insert: bool = False, update: bool = False):
 
                     try:
                         obj = await coro(*args, **kwargs, session=session)
-
-                        if obj is not None and insert:
-                            session.add(obj)
-                        if obj is not None and update:
-                            await session.execute(obj)
+                        if obj is not None:
+                            if insert:
+                                session.add(obj)
+                            if update:
+                                await session.execute(obj)
                         await transaction.commit()
                     except Exception as e:
                         await transaction.rollback()

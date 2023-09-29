@@ -1,5 +1,4 @@
 from .models import Base
-import aiosqlite
 from sqlalchemy.ext.asyncio import create_async_engine
 
 

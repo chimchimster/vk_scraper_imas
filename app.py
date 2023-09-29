@@ -1,11 +1,12 @@
 import asyncio
+from typing import Final
 
 from utils import read_schema
 from scarper import TasksDistributor, TaskObject, worker, connector
 from api.models import ResponseModel, VKUser, SubscribedToGroup, SubscribedToUser
 
 
-RATE_LIMIT = 3
+RATE_LIMIT: Final[int] = 3
 
 
 async def main():

@@ -1,7 +1,7 @@
 import asyncio
 import queue
 import sys
-from typing import Any
+from typing import Any, Final
 
 from pydantic import ValidationError
 
@@ -14,7 +14,7 @@ from vk_scraper_imas.api.utils.signals import ResponseSignal
 
 response_model = ResponseModel()
 
-RATE_LIMIT = 3
+RATE_LIMIT: Final[int] = 3
 
 
 async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue):
@@ -30,12 +30,9 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue):
 
         task_name = tasks.model.__name__
 
-        if task_name in rate_limited:
-
-            # TODO: VALIDATION OF TOKENS
-
-            validator = APIRateLimitsValidator(task_name, token)
-            await validator.validate_state_before_request()
+        # if task_name in rate_limited:
+        validator = APIRateLimitsValidator(task_name, token)
+        await validator.validate_state_before_request()
 
         async_tasks = [
             asyncio.create_task(
@@ -48,19 +45,22 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue):
 
         has_signal = isinstance(result_responses[-1], ResponseSignal)
 
-        if task_name in rate_limited:
-            print(result_responses[-1])
-            validator = APIRateLimitsValidator(task_name, token)
-            validation_has_been_passed = await validator.validate_state_after_request(signal=has_signal)
+        # if task_name in rate_limited:
 
-            if not validation_has_been_passed:
-                for task in tasks:
-                    await tasks_queue.put(task)
+        validator = APIRateLimitsValidator(task_name, token)
+        validation_has_been_passed = await validator.validate_state_after_request(signal=has_signal)
 
-                await token_queue.put(token)
-                await asyncio.sleep(1)
+        if not validation_has_been_passed:
+            for task in tasks:
+                await tasks_queue.put(task)
 
-                continue
+            await token_queue.put(token)
+            await asyncio.sleep(1)
+
+            continue
+
+        if None in result_responses:
+            continue
 
         mapping_responses = map(lambda responses: response_model.model_validate(responses), result_responses)
 

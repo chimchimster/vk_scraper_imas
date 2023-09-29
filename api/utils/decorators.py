@@ -13,9 +13,12 @@ def do_post_request_to_vk_api(func: Optional[Callable[..., Awaitable[None]]]):
 
         request_string = await func(*args, **kwargs)
 
+        timeout = aiohttp.ClientTimeout(connect=10)
+
         try:
             async with aiohttp.ClientSession(
-                    json_serialize=json.dumps,
+                json_serialize=json.dumps,
+                timeout=timeout,
             ) as session:
                 async with session.post(request_string) as response:
                     if response.status == 200:
@@ -30,6 +33,10 @@ def do_post_request_to_vk_api(func: Optional[Callable[..., Awaitable[None]]]):
                     else:
                         sys.stderr.write(f"HTTP POST завершился со статус кодом {response.status}")
 
+        except aiohttp.ServerTimeoutError as ste:
+            sys.stderr.write(str(ste))
+        except aiohttp.ServerConnectionError as sce:
+            sys.stderr.write(str(sce))
         except VKAPIException as vk_api_exc:
             sys.stderr.write(str(vk_api_exc))
 
@@ -44,5 +51,5 @@ async def check_errors(response_json):
         if VKAPIException(error_code) == 29:
             return ResponseSignal()
 
-    return ResponseSignal()
+    return None
 

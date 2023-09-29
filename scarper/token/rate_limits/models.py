@@ -41,7 +41,8 @@ class State(Base):
 
     expired = Column(Boolean, default=False)
     expired_at_unix = Column(BigInteger)
-    last_use_unix = Column(BigInteger, default=time.time())
+    valid_at_unix = Column(BigInteger)
+    last_use_unix = Column(BigInteger, default=0)
 
     requests = Column(Integer, default=0)
 
