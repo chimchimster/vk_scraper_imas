@@ -1,3 +1,3 @@
 {
-  "rate_limited": ["SubscribedToGroup"]
+  "rate_limited": ["SubscribedToGroup", "UserWall"]
 }

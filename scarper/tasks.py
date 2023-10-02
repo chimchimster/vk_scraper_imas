@@ -1,6 +1,6 @@
 from typing import List, Awaitable, Type, Union
 from vk_scraper_imas.api.services import APIAsyncRequests
-from vk_scraper_imas.api.models import VKUser, SubscribedToGroup, SubscribedToUser
+from vk_scraper_imas.api.models import *
 
 
 class TaskObject:
@@ -8,6 +8,7 @@ class TaskObject:
     __model_classes__ = {
         'get_users_info_by_vk_ids':  VKUser,
         'get_subscriptions_of_user_by_vk_id': SubscribedToGroup,
+        'get_posts_of_user_by_vk_id': UserWall,
     }
 
     def __init__(self, user_ids: Union[List, str], fields: List[str], coroutine_name: str):
@@ -46,6 +47,7 @@ class TasksDistributor:
     __allowed_methods = [
         'get_users_info_by_vk_ids',
         'get_subscriptions_of_user_by_vk_id',
+        'get_posts_of_user_by_vk_id',
     ]
 
     @property
@@ -67,8 +69,8 @@ class TasksDistributor:
 
             return await api_method(*args, **kwargs)
 
-
-
+    async def distribute_tasks(self):
+        pass
 
 
 

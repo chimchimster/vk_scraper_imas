@@ -12,11 +12,12 @@ RATE_LIMIT: Final[int] = 3
 async def main():
 
     user_ids1 = ['id226245594', 'dmitriy_panfilov', 'angieozerova', 'dosia1488', 'favnart', 'aslushnikov']
-    user_ids2 = ['id121389', 'id628380', 'id121888']
+    user_ids2 = ['id121389', 'id628380', 'id121888', 'id281818828']
     user_ids3 = ['id140480', 'batwoman_nax', 'maxim_solomin']
     user_ids4 = ['id13055', 'roganov', 'anastasina']
     user_ids5 = ['smolyanka', 'vpavlov', 'dummyfox']
     user_ids6 = 281818828
+    user_ids7 = 185865803
 
     tokens = await read_schema(connector.schemas.path_to_tokens, 'tokens')
 
@@ -30,16 +31,18 @@ async def main():
 
     task_objects = []
 
-    task_obj1 = TaskObject(user_ids1, user_fields, 'get_users_info_by_vk_ids')
-    task_obj2 = TaskObject(user_ids2, user_fields, 'get_users_info_by_vk_ids')
-    task_objects.append(task_obj1)
-    task_objects.append(task_obj2)
+    # task_obj1 = TaskObject(user_ids1, user_fields, 'get_users_info_by_vk_ids')
+    # task_obj2 = TaskObject(user_ids2, user_fields, 'get_users_info_by_vk_ids')
+    # task_objects.append(task_obj1)
+    # task_objects.append(task_obj2)
 
-    task_obj3 = TaskObject(user_ids6, group_fields, 'get_subscriptions_of_user_by_vk_id')
-    task_objects.append(task_obj3)
+    # task_obj3 = TaskObject(user_ids6, group_fields, 'get_subscriptions_of_user_by_vk_id')
+    # task_objects.append(task_obj3)
 
-    for task_obj in task_objects:
-        await tasks_queue.put(task_obj)
+    task_obj4 = TaskObject(user_ids7, [], 'get_posts_of_user_by_vk_id')
+    task_objects.append(task_obj4)
+
+    await tasks_queue.put(task_objects)
 
     await worker(tasks_queue, tokens_queue)
 

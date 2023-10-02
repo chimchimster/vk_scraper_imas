@@ -1,4 +1,6 @@
-from typing import Optional, Union, Dict
+from typing import Optional, Union, Dict, List
+
+from pydantic import conint
 
 from .base import Base
 
@@ -104,3 +106,70 @@ class PlaceInfo(Base):
     country: Optional[Union[int, None]] = None
     city: Optional[Union[int, None]] = None
     address: Optional[Union[str, None]] = None
+
+
+
+class PostLikes(Base):
+    count: Optional[int] = 0
+
+
+class PostReposts(Base):
+    count: Optional[int] = 0
+
+
+class PostViews(Base):
+    count: Optional[int] = 0
+
+
+class PhotoUrl(Base):
+    url: Optional[str]
+
+
+class AttachmentPhoto(Base):
+    id: Optional[int]
+    owner_id: Optional[int]
+    post_id: Optional[int]
+    album_id: Optional[int]
+    date: Optional[int]
+    text: Optional[str] = ''
+    sizes: Optional[List[PhotoUrl]] = None
+
+
+class AttachmentVideo(Base):
+    id: Optional[int]
+    owner_id: Optional[int]
+    title: Optional[str] = ''
+    description: Optional[str] = ''
+    date: Optional[int]
+    views: Optional[int] = 0
+    image: Optional[List[PhotoUrl]] = None
+
+
+class Audio(Base):
+    id: Optional[int]
+    owner_id: Optional[int]
+    title: Optional[str] = ''
+    artist: Optional[str] = ''
+    url: Optional[str] = ''
+    date: Optional[int]
+
+
+class AttachmentAudio(Base):
+    type: Optional[str] = ''
+    audio: Optional[Audio] = None
+
+
+class PostAttachment(Base):
+    type: Optional[str] = ''
+    photo: Optional[AttachmentPhoto] = None
+    video: Optional[AttachmentVideo] = None
+    audio: Optional[AttachmentAudio] = None
+
+
+class CopyHistory(Base):
+    id: Optional[int]
+    owner_id: Optional[int]
+    from_id: Optional[int]
+    type: Optional[str]
+    text: Optional[str]
+    attachments: Optional[List[Union[AttachmentVideo, AttachmentPhoto, AttachmentAudio]]] = None

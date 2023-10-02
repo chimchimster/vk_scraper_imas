@@ -1,4 +1,14 @@
-from .user_subscriptions import SubscribedToUser
-from .group_subscriptions import SubscribedToGroup
-from .response import ResponseModel
-from .user import VKUser
+from .user_subscriptions import *
+from .group_subscriptions import *
+from .response import *
+from .common import *
+from .user import *
+
+
+__all__ = [
+    'SubscribedToUser',
+    'SubscribedToGroup',
+    'ResponseModel',
+    'VKUser',
+    'UserWall',
+]
