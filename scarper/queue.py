@@ -15,18 +15,21 @@ from vk_scraper_imas.api.utils.signals import ResponseSignal
 RATE_LIMIT: Final[int] = 3
 
 
-async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue):
-    task_distributor = TasksDistributor()
+async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue, task_distributor: TasksDistributor):
 
     rate_limited = await read_schema(connector.schemas.rate_limited, 'rate_limited')
 
-    semaphore = asyncio.Semaphore(10)
+    semaphore = asyncio.Semaphore(100)
 
     while True:
 
         tasks = await tasks_queue.get()
 
+        for task in tasks:
+            print(task.model.__name__)
+
         token = await token_queue.get()
+
         await token_queue.put(token)
 
         async_tasks = [process_task(task_distributor, task, token, rate_limited, semaphore) for task in tasks]
@@ -82,9 +85,9 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                         validated_models.append(validated_data)
                     except ValidationError as v:
                         sys.stderr.write(str(v))
-                print(len(validated_models))
+
                 for model in validated_models:
-                    print(model, end='\n')
+                    print(model.json(), end='\n')
         except Exception as e:
             sys.stderr.write(f"An error occurred: {str(e)}")
 
@@ -93,6 +96,8 @@ async def define_model_handler(
         mapping_response: ResponseModel,
         task_name: str,
 ) -> Dict[Type[VKUser | SubscribedToGroup], List | None | Any]:
+
+    # TODO: провести рефакторинг
 
     model_handlers = {}
 

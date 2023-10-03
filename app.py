@@ -1,5 +1,7 @@
-import asyncio
 from typing import Final
+
+import asyncio
+from asyncio import Queue
 
 from utils import read_schema
 from scarper import TasksDistributor, TaskObject, worker, connector
@@ -21,15 +23,11 @@ async def main():
     user_fields = await read_schema(connector.schemas.user_fields, 'user_fields')
     group_fields = await read_schema(connector.schemas.group_fields, 'group_fields')
 
-    tasks_queue = asyncio.Queue()
-    tokens_queue = asyncio.Queue()
+    tasks_queue, tokens_queue = Queue(), Queue()
 
     await tokens_queue.put(*tokens)
 
-    task_objects = []
     my_list = [
-        -222629774,
-        185865803,
         "148221339",
         "481398296",
         "470635261",
@@ -532,30 +530,30 @@ async def main():
         "304297989",
     ]
 
+    task_distributor = TasksDistributor()
 
-    distributor = TasksDistributor()
-    task_obj_vk_user = await distributor.grouping_tasks(my_list, 'VKUser', fields=user_fields, coroutine_name='get_users_info_by_vk_ids')
-    task_objects.append(task_obj_vk_user)
-    # task_obj1 = TaskObject(my_list, user_fields, 'get_users_info_by_vk_ids')
-    # task_obj2 = TaskObject(user_ids2, user_fields, 'get_users_info_by_vk_ids')
-    # task_objects.append(task_obj1)
-    # task_objects.append(task_obj2)
+    task_objs_vk_user = await task_distributor.group(
+        my_list,
+        'VKUser',
+        fields=user_fields,
+        coroutine_name='get_users_info_by_vk_ids',
+    )
 
-    # task_obj3 = TaskObject(user_ids6, group_fields, 'get_subscriptions_of_user_by_vk_id')
-    # task_objects.append(task_obj3)
+    task_objs_subscribed_to_group = await task_distributor.group(
+        list(map(int, my_list)),
+        'SubscribedToGroup',
+        fields=group_fields,
+        coroutine_name='get_subscriptions_of_user_by_vk_id'
+    )
 
-    # task_obj4 = TaskObject(user_ids7, [], 'get_posts_by_vk_id')
-    # task_objects.append(task_obj4)
+    task_objs = []
+    task_objs.extend(task_objs_vk_user)
+    task_objs.extend(task_objs_subscribed_to_group)
 
-    # task_obj5 = TaskObject(group_id8, [], 'get_posts_by_vk_id')
-    # task_objects.append(task_obj5)
+    for task in task_objs:
+        await tasks_queue.put(task)
 
-    await tasks_queue.put(task_objects)
-
-    await worker(tasks_queue, tokens_queue)
-
-    # TODO: NOW FORM COROUTINES FOR ALL OPERATIONS ALLOWED BY TOKENS, SEND REQS AND INSERT DATA IN DATABASE
-
+    await worker(tasks_queue, tokens_queue, task_distributor)
 
 if __name__ == '__main__':
     asyncio.run(main())

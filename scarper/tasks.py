@@ -82,21 +82,21 @@ class TasksDistributor:
 
             return await api_method(*args, **kwargs)
 
-    async def grouping_tasks(
+    async def group(
             self,
             vk_ids: List[Union[str, int]],
             task_name: str,
             fields: List[str] = None,
             coroutine_name: str = None,
-    ):
+    ) -> List[List[TaskObject]]:
 
         limit = self.grouping_limits.get(task_name)
 
-        return [[
-            TaskObject(vk_ids[start:start + limit], fields, coroutine_name)
-            for start in range(len(vk_ids))
-        ][start:start+RATE_LIMIT] for start in range(0, len(vk_ids), RATE_LIMIT)]
+        tasks = [TaskObject(vk_ids[start:start + limit], fields, coroutine_name) for start in range(0, len(vk_ids), limit)]
 
+        chunked_tasks = [tasks[start:start+RATE_LIMIT] for start in range(len(tasks))]
+
+        return chunked_tasks
 
 
 
