@@ -12,7 +12,6 @@ from vk_scraper_imas.api.models import *
 from vk_scraper_imas.scarper.token.rate_limits import APIRateLimitsValidator
 from vk_scraper_imas.api.utils.signals import ResponseSignal
 
-
 RATE_LIMIT: Final[int] = 3
 
 
@@ -26,6 +25,7 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue):
     while True:
 
         tasks = await tasks_queue.get()
+
         token = await token_queue.get()
         await token_queue.put(token)
 
@@ -82,7 +82,7 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                         validated_models.append(validated_data)
                     except ValidationError as v:
                         sys.stderr.write(str(v))
-
+                print(len(validated_models))
                 for model in validated_models:
                     print(model, end='\n')
         except Exception as e:
@@ -100,7 +100,7 @@ async def define_model_handler(
         model_handlers[VKUser] = mapping_response.response
     elif task_name == 'SubscribedToGroup':
         model_handlers[SubscribedToGroup] = mapping_response.response.get('items')
-    elif task_name == 'UserWall':
-        model_handlers[UserWall] = mapping_response.response.get('items')
+    elif task_name == 'Wall':
+        model_handlers[Wall] = mapping_response.response.get('items')
 
     return model_handlers

@@ -1,6 +1,8 @@
-from typing import List, Awaitable, Type, Union
+from typing import List, Awaitable, Type, Union, Final, Dict
 from vk_scraper_imas.api.services import APIAsyncRequests
 from vk_scraper_imas.api.models import *
+
+RATE_LIMIT: Final[int] = 3
 
 
 class TaskObject:
@@ -8,7 +10,7 @@ class TaskObject:
     __model_classes__ = {
         'get_users_info_by_vk_ids':  VKUser,
         'get_subscriptions_of_user_by_vk_id': SubscribedToGroup,
-        'get_posts_of_user_by_vk_id': UserWall,
+        'get_posts_by_vk_id': Wall,
     }
 
     def __init__(self, user_ids: Union[List, str], fields: List[str], coroutine_name: str):
@@ -42,35 +44,61 @@ class TaskObject:
 
 class TasksDistributor:
 
-    __request_class = APIAsyncRequests
+    __task_instance = TaskObject
+    __request_class_instance = APIAsyncRequests
 
     __allowed_methods = [
         'get_users_info_by_vk_ids',
         'get_subscriptions_of_user_by_vk_id',
-        'get_posts_of_user_by_vk_id',
+        'get_posts_by_vk_id',
     ]
 
+    __grouping_limits = {
+        'VKUser': 500,
+        'SubscribedToGroup': 1,
+        'Wall': 1,
+    }
+
     @property
-    def request_class(self) -> Type[APIAsyncRequests]:
-        return self.__request_class
+    def request_class_instance(self) -> Type[APIAsyncRequests]:
+        return self.__request_class_instance
 
     @property
     def allowed_methods(self) -> List:
         return self.__allowed_methods
+
+    @property
+    def grouping_limits(self) -> Dict:
+        return self.__grouping_limits
 
     async def call_api_method(self, method_name: str, *args, **kwargs) -> Union[Awaitable, None]:
         """ Фабричный подход выбора нужного метода для очереди задач. """
 
         if method_name in self.allowed_methods:
 
-            api_request_instance = self.request_class()
+            api_request_instance = self.request_class_instance()
 
             api_method = getattr(api_request_instance, method_name)
 
             return await api_method(*args, **kwargs)
 
-    async def distribute_tasks(self):
-        pass
+    async def grouping_tasks(
+            self,
+            vk_ids: List[Union[str, int]],
+            task_name: str,
+            fields: List[str] = None,
+            coroutine_name: str = None,
+    ):
+
+        limit = self.grouping_limits.get(task_name)
+
+        return [[
+            TaskObject(vk_ids[start:start + limit], fields, coroutine_name)
+            for start in range(len(vk_ids))
+        ][start:start+RATE_LIMIT] for start in range(0, len(vk_ids), RATE_LIMIT)]
+
+
+
 
 
 

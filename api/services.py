@@ -45,8 +45,8 @@ class APIAsyncRequests:
         )
 
     @do_post_request_to_vk_api
-    async def get_posts_of_user_by_vk_id(self, user_id: int, **kwargs) -> str:
-        """ Возвращает информацию о всех постах на стене пользователя. """
+    async def get_posts_by_vk_id(self, user_id: int, **kwargs) -> str:
+        """ Возвращает информацию о всех постах на стене пользователя и/или группы. """
 
         token = kwargs.pop('token')
 
@@ -61,7 +61,7 @@ class APIAsyncRequests:
     async def form_request_string(self, method: str, **kwargs) -> str:
 
         kwargs = [f'{key}={val}&' for key, val in kwargs.items()]
-        print(self.API_LINK + """{}?{}""".format(method, ''.join(kwargs)[:-1]))
+
         return self.API_LINK + """{}?{}""".format(method, ''.join(kwargs)[:-1])
 
 
