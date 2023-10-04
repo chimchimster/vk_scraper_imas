@@ -14,10 +14,14 @@ class RateLimitSignal:
 
 class PrivateProfileSignal:
     """ Сигнал оповещающий о том, что профиль приватный. """
-    pass
+
+
+class PageLockedOrDeletedSignal:
+    """ Сигнал оповещающий о том, что профиль заблокирован, либо удален. """
 
 
 __all__ = [
     'RateLimitSignal',
-    'PrivateProfileSignal'
+    'PrivateProfileSignal',
+    'PageLockedOrDeletedSignal',
 ]

@@ -1,10 +1,10 @@
-from vk_scraper_imas.database.config import config
 from sqlalchemy.ext.asyncio import create_async_engine
+from vk_scraper_imas.database.config import config
 
 
 class MySQLEngine:
     db_url = config.mysql_db.get_secret_value()
-    engine = create_async_engine(db_url)
+    engine = create_async_engine(db_url, pool_size=20, max_overflow=1)
 
 
 engine_mysql = MySQLEngine()

@@ -84,7 +84,7 @@ class TasksDistributor:
 
     async def group(
             self,
-            vk_ids: List[Union[str, int]],
+            vk_ids: List[int],
             task_name: str,
             fields: List[str] = None,
             coroutine_name: str = None,

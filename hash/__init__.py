@@ -1,1 +1,1 @@
-from .hash_generator import HashGenerator
+from .hash_generator import generate_hash

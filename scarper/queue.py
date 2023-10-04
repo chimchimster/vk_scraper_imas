@@ -1,11 +1,12 @@
-import asyncio
-import queue
+import json
 import sys
+import asyncio
+
 from typing import Any, Final, Dict, Type, List
 
-from pydantic import ValidationError
-
+from vk_scraper_imas.hash import generate_hash
 from vk_scraper_imas.utils import read_schema
+from vk_scraper_imas.database import *
 from vk_scraper_imas.scarper import connector
 from .tasks import TasksDistributor
 from vk_scraper_imas.api.models import *
@@ -24,9 +25,6 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue, task_di
     while True:
 
         tasks = await tasks_queue.get()
-
-        for task in tasks:
-            print(task.model.__name__)
 
         token = await token_queue.get()
 
@@ -58,7 +56,7 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                 task.coroutine_name, task.user_ids, fields=task.fields, token=token,
             )
 
-            if isinstance(result_response, PrivateProfileSignal):
+            if type(result_response) in (PrivateProfileSignal, PageLockedOrDeletedSignal):
                 return
 
             has_signal = isinstance(result_response, RateLimitSignal)
@@ -85,8 +83,18 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                     validated_data = task_model.model_validate(response_data)
                     validated_models.append(validated_data)
 
-                for model in validated_models:
-                    print(model.json(), end='\n')
+                # for model in validated_models:
+                #     print(model.json(), end='\n')
+                #
+
+                tasks = [asyncio.create_task(generate_hash(json.loads(model.json()))) for model in validated_models]
+
+                result = await asyncio.gather(*tasks)
+                print(result)
+
+                result = await insert_hashes_of_users_by_source_id(result)
+                print(result)
+
         except Exception as e:
             sys.stderr.write(f"An error occurred: {str(e)}")
 

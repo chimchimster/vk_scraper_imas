@@ -52,6 +52,8 @@ async def check_errors(response_json):
             return RateLimitSignal()
         if error_code == 30:
             return PrivateProfileSignal()
+        if error_code == 18:
+            return PageLockedOrDeletedSignal()
 
     return None
 

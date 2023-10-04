@@ -21,7 +21,7 @@ class APIAsyncRequests:
 
         return await self.form_request_string(
             'users.get',
-            user_ids=','.join(user_ids),
+            user_ids=','.join(map(str, user_ids)),
             fields=','.join(fields),
             access_token=token,
             v=5.131,

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, SmallInteger, String, Text, Date, JSON, ForeignKey
+from sqlalchemy import Column, Integer, SmallInteger, String, Text, Date, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import declarative_base, relationship
 
 
@@ -9,7 +9,7 @@ class Source(BaseModel):
 
     __tablename__ = 'source'
 
-    res_id = Column(Integer, primary_key=True)
+    res_id = Column(Integer, primary_key=True, autoincrement=True)
     soc_type = Column(Integer)
     source_id = Column(Integer)
     source_type = Column(Integer)
@@ -19,16 +19,20 @@ class Source(BaseModel):
     user_profile = relationship('UserProfile', back_populates='source', uselist=False)
     subscription_profile = relationship('SubscriptionProfile', back_populates='source', uselist=False)
 
+    __table_args__ = (
+        UniqueConstraint(source_id, name='source_id'),
+    )
+
 
 class UserEvent(BaseModel):
 
-    __tablename__ = 'user_event'
+    __tablename__ = 'source_user_event'
 
     event_time = Column(Integer, primary_key=True)
     event_type = Column(String(length=255), primary_key=True)
     event_value = Column(String(length=255), primary_key=True)
 
-    res_id = Column('Source', ForeignKey('source.res_id'))
+    res_id = Column(Integer, ForeignKey('source.res_id'))
     source = relationship('Source', back_populates='user_event')
 
 
@@ -36,7 +40,7 @@ class ScrapperHash(BaseModel):
 
     __tablename__ = 'scrapper_hash'
 
-    res_id = Column('Source', ForeignKey('source.res_id'), primary_key=True)
+    res_id = Column(Integer, ForeignKey('source.res_id'), primary_key=True)
     source = relationship('Source', back_populates='scrapper_hash')
 
     social_info_hash = Column(String(length=255))
@@ -44,9 +48,9 @@ class ScrapperHash(BaseModel):
 
 class UserProfile(BaseModel):
 
-    __tablename__ = 'user_profile'
+    __tablename__ = 'source_user_profile'
 
-    res_id = Column('Source', ForeignKey('source.res_id'), primary_key=True)
+    res_id = Column(Integer, ForeignKey('source.res_id'), primary_key=True)
     source = relationship('Source', back_populates='user_profile')
 
     user_name = Column(String(length=255))
@@ -61,9 +65,9 @@ class UserProfile(BaseModel):
 
 class SubscriptionProfile(BaseModel):
 
-    __tablename__ = 'subscription_profile'
+    __tablename__ = 'source_user_subscription'
 
-    res_id = Column('Source', ForeignKey('source.res_id'), primary_key=True)
+    res_id = Column(Integer, ForeignKey('source.res_id'), primary_key=True)
     source = relationship('Source', back_populates='subscription_profile')
 
     subscription_name = Column(String(length=255))
