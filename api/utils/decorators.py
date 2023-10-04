@@ -3,7 +3,7 @@ import sys
 from functools import wraps
 from typing import Awaitable, Optional, Callable
 from vk_scraper_imas.api.exceptions import VKAPIException
-from .signals import ResponseSignal
+from .signals import *
 import aiohttp
 
 
@@ -48,8 +48,10 @@ async def check_errors(response_json):
         error_code = response_json['error']['error_code']
         sys.stderr.write(str(VKAPIException(error_code)))
 
-        if VKAPIException(error_code) == 29:
-            return ResponseSignal()
+        if error_code == 29:
+            return RateLimitSignal()
+        if error_code == 30:
+            return PrivateProfileSignal()
 
     return None
 

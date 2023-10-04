@@ -10,7 +10,7 @@ from vk_scraper_imas.scarper import connector
 from .tasks import TasksDistributor
 from vk_scraper_imas.api.models import *
 from vk_scraper_imas.scarper.token.rate_limits import APIRateLimitsValidator
-from vk_scraper_imas.api.utils.signals import ResponseSignal
+from vk_scraper_imas.api.utils.signals import *
 
 RATE_LIMIT: Final[int] = 3
 
@@ -58,8 +58,10 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                 task.coroutine_name, task.user_ids, fields=task.fields, token=token,
             )
 
-            has_signal = isinstance(result_response, ResponseSignal)
+            if isinstance(result_response, PrivateProfileSignal):
+                return
 
+            has_signal = isinstance(result_response, RateLimitSignal)
             validation_has_been_passed = True
 
             if task_name in rate_limited:
@@ -80,11 +82,8 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                     if not response_data:
                         break
 
-                    try:
-                        validated_data = task_model.model_validate(response_data)
-                        validated_models.append(validated_data)
-                    except ValidationError as v:
-                        sys.stderr.write(str(v))
+                    validated_data = task_model.model_validate(response_data)
+                    validated_models.append(validated_data)
 
                 for model in validated_models:
                     print(model.json(), end='\n')

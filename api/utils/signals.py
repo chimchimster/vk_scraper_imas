@@ -1,4 +1,4 @@
-class ResponseSignal:
+class RateLimitSignal:
     def __init__(self):
         self.value = False
 
@@ -10,3 +10,14 @@ class ResponseSignal:
 
     def __bool__(self) -> bool:
         return self.value
+
+
+class PrivateProfileSignal:
+    """ Сигнал оповещающий о том, что профиль приватный. """
+    pass
+
+
+__all__ = [
+    'RateLimitSignal',
+    'PrivateProfileSignal'
+]

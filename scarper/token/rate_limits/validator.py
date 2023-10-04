@@ -19,6 +19,8 @@ class APIRateLimitsValidator:
         return self._token
 
     async def validate_state_before_request(self):
+        """ Валидация состояния связи токен-объект запроса
+            (создание состояния, в случае если такого состояния нет). """
 
         validator = APIStateDB()
 

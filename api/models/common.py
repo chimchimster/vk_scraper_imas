@@ -31,21 +31,8 @@ class ContactsInfo(Base):
 
 
 class CountersInfo(Base):
-    albums: Optional[Union[int, None]] = None
-    videos: Optional[Union[int, None]] = None
-    audios: Optional[Union[int, None]] = None
-    photos: Optional[Union[int, None]] = None
-    notes: Optional[Union[int, None]] = None
     friends: Optional[Union[int, None]] = None
-    gifts: Optional[Union[int, None]] = None
-    groups: Optional[Union[int, None]] = None
-    online_friends: Optional[Union[int, None]] = None
-    mutual_friends: Optional[Union[int, None]] = None
-    user_videos: Optional[Union[int, None]] = None
-    user_photos: Optional[Union[int, None]] = None
     followers: Optional[Union[int, None]] = None
-    pages: Optional[Union[int, None]] = None
-    subscriptions: Optional[Union[int, None]] = None
 
 
 class CountryInfo(Base):
@@ -95,17 +82,6 @@ class RelativeInfo(Base):
     id: Optional[Union[int, None]] = None
     name: Optional[Union[str, None]] = None
     type: Optional[Union[str, None]] = None
-
-
-class PlaceInfo(Base):
-    id: Optional[Union[int, None]] = None
-    title: Optional[Union[str, None]] = None
-    latitude: Optional[Union[float, None]] = None
-    longitude: Optional[Union[float, None]] = None
-    type: Optional[Union[str, None]] = None
-    country: Optional[Union[int, None]] = None
-    city: Optional[Union[int, None]] = None
-    address: Optional[Union[str, None]] = None
 
 
 class PostLikes(Base):
@@ -196,7 +172,6 @@ __all__ = [
     'PostViews',
     'PostReposts',
     'PostLikes',
-    'PlaceInfo',
     'CountryInfo',
     'CareerInfo',
     'CityInfo',

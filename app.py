@@ -25,7 +25,8 @@ async def main():
 
     tasks_queue, tokens_queue = Queue(), Queue()
 
-    await tokens_queue.put(*tokens)
+    for token in tokens:
+        await tokens_queue.put(token)
 
     my_list = [
         "148221339",
