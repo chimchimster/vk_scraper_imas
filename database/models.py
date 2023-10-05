@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, SmallInteger, String, Text, Date, JSON, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, SmallInteger, String, Text, Date, JSON, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.orm import declarative_base, relationship
 
 
@@ -57,15 +57,17 @@ class UserProfile(BaseModel):
     deactivated = Column(Integer)
     is_closed = Column(SmallInteger)
     sex = Column(Integer)
-    birthdate = Column(Date)
+    birth_date = Column(Date)
     profile_image = Column(Text)
     info_json = Column(JSON)
     alerts = Column(String(length=20))
 
+    user_subscription = relationship('UserSubscription', back_populates='user')
+
 
 class SubscriptionProfile(BaseModel):
 
-    __tablename__ = 'source_user_subscription'
+    __tablename__ = 'source_subscription_profile'
 
     res_id = Column(Integer, ForeignKey('source.res_id'), primary_key=True)
     source = relationship('Source', back_populates='subscription_profile')
@@ -78,10 +80,16 @@ class SubscriptionProfile(BaseModel):
     info_json = Column(JSON)
     alerts = Column(String(length=20))
 
+    subscription_profile = relationship('UserSubscription', back_populates='subscription')
+
 
 class UserSubscription(BaseModel):
 
-    __tablename__ = 'user_subscription'
+    __tablename__ = 'source_user_subscription'
 
-    user_system_id = Column(Integer, ForeignKey('user_profile.system_id'), primary_key=True)
-    subscription_system_id = Column(Integer, ForeignKey('subscription_profile.system_id'), primary_key=True)
+    user_res_id = Column(Integer, ForeignKey('source_user_profile.res_id'), primary_key=True)
+    subscription_res_id = Column(Integer, ForeignKey('source_subscription_profile.res_id'), primary_key=True)
+    status = Column(Boolean)
+
+    user = relationship('UserProfile', back_populates='user_subscription')
+    subscription = relationship('SubscriptionProfile', back_populates='subscription_profile')

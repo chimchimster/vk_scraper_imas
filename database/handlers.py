@@ -1,9 +1,11 @@
 import asyncio
-from typing import List, Tuple
+import json
+from typing import List, Tuple, Dict
 
 from sqlalchemy import select, update, insert, join, func
 
 from .models import *
+from .common import *
 from .decorators import execute_transaction
 
 
@@ -24,11 +26,12 @@ async def insert_into_source(**kwargs):
 
 
 @execute_transaction
-async def get_source_ids(offset: int, limit: int, **kwargs) -> List[Tuple]:
+async def get_source_ids(offset: int, limit: int, source_type: int = 1,  **kwargs) -> List[Tuple]:
+    """ Получение уникальных идентификаторов соцсети Вконтакте пользователей. """
 
     session = kwargs.get('session')
 
-    stmt = select(Source.source_id).order_by(Source.res_id).offset(offset).limit(limit)
+    stmt = select(Source.source_id).where(Source.source_type == source_type).order_by(Source.res_id).offset(offset).limit(limit)
 
     chunked_iterator_result = await session.execute(stmt)
 
@@ -38,13 +41,13 @@ async def get_source_ids(offset: int, limit: int, **kwargs) -> List[Tuple]:
 
 
 @execute_transaction
-async def get_source_ids_count(**kwargs) -> int:
-    """ Получаем общее количество доступных source_id.
+async def get_source_ids_count(source_type: int = 1, **kwargs) -> int:
+    """ Получение общего количества доступных source_id.
         :source_id: идентификатор пользовтеля/группы Вконтакте. """
 
     session = kwargs.get('session')
 
-    stmt = select(func.count(Source.source_id)).select_from(Source)
+    stmt = select(func.count(Source.source_id)).select_from(Source).where(Source.source_type == source_type)
 
     count = await session.execute(stmt)
 
@@ -67,11 +70,59 @@ async def insert_hashes_of_users_by_source_id(data: List[Tuple[int, str]], **kwa
     # ПРОДОЛЖАЕМ ОТСЮДА!
     stmt = insert(ScrapperHash).values(_map)
 
-
     return res_ids
 
 
+@execute_transaction
+async def insert_into_source_user_profile(user_profile: Dict, **kwargs):
+    """ Добавление данных о пользователе Вконтакте. """
 
+    session = kwargs.get('session')
+
+    to_relational_fields = await cleanup_user_profile_data(user_profile, delta=False)
+    to_json_field = await cleanup_user_profile_data(user_profile, delta=True)
+    to_relational_fields_mapped = await map_vk_user_keys_with_database_fields(to_relational_fields)
+    json_field = json.dumps(to_json_field)
+
+    source_id = to_relational_fields_mapped.pop('id')
+    stmt = select(Source.res_id).filter_by(source_id=source_id)
+    result = await session.execute(stmt)
+    res_id = result.scalar()
+
+    stmt = insert(UserProfile).values(res_id=res_id, **to_relational_fields_mapped, info_json=json_field)
+
+    await session.execute(stmt)
+
+
+@execute_transaction
+async def insert_into_source_subscription(user_subscription: Dict, user_source_id: int, **kwargs):
+
+    session = kwargs.pop('session')
+
+    to_relational_fields = await cleanup_subscription_profile_data(user_subscription, delta=False)
+    to_json_field = await cleanup_subscription_profile_data(user_subscription, delta=True)
+    to_relational_fields_mapped = await map_vk_subscription_keys_with_database_fields(to_relational_fields)
+    json_field = json.dumps(to_json_field)
+
+    subscription_source_id = to_relational_fields_mapped.pop('id')
+
+    stmt = insert(Source).values(soc_type=1, source_id=subscription_source_id, source_type=2)
+    await session.execute(stmt)
+
+    user_profile = select(Source.res_id).filter_by(source_id=user_source_id)
+    user_profile = await session.execute(user_profile)
+
+    subscription = select(Source.res_id).filter_by(source_id=subscription_source_id)
+    subscription = await session.execute(subscription)
+
+    user_profile_res_id = user_profile.scalar()
+    subscription_res_id = subscription.scalar()
+
+    stmt = insert(UserSubscription).values(user_res_id=user_profile_res_id, subscription_res_id=subscription_res_id, status=1)
+    await session.execute(stmt)
+
+    stmt = insert(SubscriptionProfile).values(res_id=subscription_res_id, **to_relational_fields_mapped, info_json=json_field)
+    await session.execute(stmt)
 
 
 @execute_transaction

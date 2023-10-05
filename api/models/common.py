@@ -17,7 +17,6 @@ class CareerInfo(Base):
 
 
 class CityInfo(Base):
-    id: Optional[Union[int, None]] = None
     title: Optional[Union[str, None]] = None
 
 
@@ -36,7 +35,6 @@ class CountersInfo(Base):
 
 
 class CountryInfo(Base):
-    id: Optional[Union[int, None]] = None
     title: Optional[Union[str, None]] = None
 
 
@@ -63,7 +61,6 @@ class MilitaryInfo(Base):
 
 class OccupationInfo(Base):
     type: Optional[Union[str, None]] = None
-    id: Optional[Union[int, None]] = None
     name: Optional[Union[str, None]] = None
 
 
@@ -79,7 +76,6 @@ class PersonalInfo(Base):
 
 
 class RelativeInfo(Base):
-    id: Optional[Union[int, None]] = None
     name: Optional[Union[str, None]] = None
     type: Optional[Union[str, None]] = None
 

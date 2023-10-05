@@ -83,17 +83,34 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                     validated_data = task_model.model_validate(response_data)
                     validated_models.append(validated_data)
 
-                # for model in validated_models:
-                #     print(model.json(), end='\n')
+                if task_name == 'VKUser':
+                    pass
+                    # tasks = [
+                    #     asyncio.create_task(
+                    #         insert_into_source_user_profile(json.loads(model.json()))
+                    #     ) for model in validated_models
+                    # ]
+                    #
+                    # await asyncio.gather(*tasks)
+                elif task_name == 'SubscribedToGroup':
+
+                    for model in validated_models:
+                        print(model.json(), end='\n')
+
+                    tasks = [
+                        asyncio.create_task(
+                            insert_into_source_subscription(json.loads(model.json()), task.user_ids)
+                        ) for model in validated_models
+                    ]
+
+                    await asyncio.gather(*tasks)
+                # tasks = [asyncio.create_task(generate_hash(json.loads(model.json()))) for model in validated_models]
                 #
-
-                tasks = [asyncio.create_task(generate_hash(json.loads(model.json()))) for model in validated_models]
-
-                result = await asyncio.gather(*tasks)
-                print(result)
-
-                result = await insert_hashes_of_users_by_source_id(result)
-                print(result)
+                # result = await asyncio.gather(*tasks)
+                # print(result)
+                #
+                # result = await insert_hashes_of_users_by_source_id(result)
+                # print(result)
 
         except Exception as e:
             sys.stderr.write(f"An error occurred: {str(e)}")
