@@ -24,4 +24,4 @@ async def generate_hash(response_dict: Dict):
 
     string = json.dumps(response_dict)
 
-    return response_dict.get('id'), hashlib.sha256(string.encode()).hexdigest()
+    return hashlib.sha256(string.encode()).hexdigest()

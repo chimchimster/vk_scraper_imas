@@ -17,13 +17,11 @@ RATE_LIMIT: Final[int] = 3
 
 
 async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue, task_distributor: TasksDistributor):
-
     rate_limited = await read_schema(connector.schemas.rate_limited, 'rate_limited')
 
     semaphore = asyncio.Semaphore(100)
 
     while True:
-
         tasks = await tasks_queue.get()
 
         token = await token_queue.get()
@@ -40,7 +38,6 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue, task_di
 
 
 async def process_task(task_distributor, task, token, rate_limited, semaphore):
-
     task_model = task.model
     task_name = task.model.__name__
 
@@ -50,20 +47,24 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
         validator = APIRateLimitsValidator(task_name, token)
         await validator.validate_state_before_request()
 
-    async with semaphore:
+    async with (semaphore):
         try:
             result_response = await task_distributor.call_api_method(
                 task.coroutine_name, task.user_ids, fields=task.fields, token=token,
             )
 
-            if type(result_response) in (PrivateProfileSignal, PageLockedOrDeletedSignal):
+            if any(
+                    map(
+                        lambda signal: isinstance(result_response, signal),
+                        [PrivateProfileSignal, PageLockedOrDeletedSignal]
+                    )
+            ):
                 return
 
             has_signal = isinstance(result_response, RateLimitSignal)
             validation_has_been_passed = True
 
             if task_name in rate_limited:
-
                 validator = APIRateLimitsValidator(task_name, token)
                 validation_has_been_passed = await validator.validate_state_after_request(signal=has_signal)
 
@@ -83,27 +84,26 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                     validated_data = task_model.model_validate(response_data)
                     validated_models.append(validated_data)
 
-                if task_name == 'VKUser':
-                    pass
-                    # tasks = [
-                    #     asyncio.create_task(
-                    #         insert_into_source_user_profile(json.loads(model.json()))
-                    #     ) for model in validated_models
-                    # ]
-                    #
-                    # await asyncio.gather(*tasks)
-                elif task_name == 'SubscribedToGroup':
+                # for model in validated_models:
+                #     print(model.json(), end='\n')
 
-                    for model in validated_models:
-                        print(model.json(), end='\n')
+                if task_name == 'VKUser':
 
                     tasks = [
                         asyncio.create_task(
-                            insert_into_source_subscription(json.loads(model.json()), task.user_ids)
+                            user_handler(json.loads(model.json()))
                         ) for model in validated_models
                     ]
 
-                    await asyncio.gather(*tasks)
+                elif task_name == 'SubscribedToGroup':
+
+                    tasks = [
+                        asyncio.create_task(
+                            subscription_handler(json.loads(model.json()), task.user_ids)
+                        ) for model in validated_models
+                    ]
+
+                await asyncio.gather(*tasks)
                 # tasks = [asyncio.create_task(generate_hash(json.loads(model.json()))) for model in validated_models]
                 #
                 # result = await asyncio.gather(*tasks)
@@ -120,7 +120,6 @@ async def define_model_handler(
         mapping_response: ResponseModel,
         task_name: str,
 ) -> Dict[Type[VKUser | SubscribedToGroup], List | None | Any]:
-
     # TODO: провести рефакторинг
 
     model_handlers = {}

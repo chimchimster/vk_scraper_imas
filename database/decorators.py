@@ -14,7 +14,7 @@ def execute_transaction(coro):
                     return await coro(*args, **kwargs, session=session)
                 except Exception as e:
                     await transaction.rollback()
-                    sys.stderr.write(str(e))
+                    sys.stderr.write('execute transaction: ' + str(e))
                 finally:
                     await transaction.commit()
 
