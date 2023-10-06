@@ -91,15 +91,15 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                     x = await users_handler([json.loads(model.json()) for model in validated_models])
                     print(x)
 
-                elif task_name == 'SubscribedToGroup':
-
-                    tasks = [
-                        asyncio.create_task(
-                            subscription_handler(json.loads(model.json()), task.user_ids)
-                        ) for model in validated_models
-                    ]
-
-                await asyncio.gather(*tasks)
+                # elif task_name == 'SubscribedToGroup':
+                #
+                #     tasks = [
+                #         asyncio.create_task(
+                #             subscription_handler(json.loads(model.json()), task.user_ids)
+                #         ) for model in validated_models
+                #     ]
+                #
+                # await asyncio.gather(*tasks)
 
         except Exception as e:
             sys.stderr.write(f"An error occurred: {str(e)}")

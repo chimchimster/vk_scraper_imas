@@ -1,3 +1,4 @@
+import asyncio
 import json
 import hashlib
 
@@ -11,7 +12,7 @@ DYNAMIC_DATA = [
 ]
 
 
-async def generate_hash(response_dict: Dict):
+async def generate_hash(res_id: int, response_dict: Dict):
     """ Генерация ключа по входным данным. """
 
     async def cleanup():
@@ -29,8 +30,8 @@ async def generate_hash(response_dict: Dict):
             else value for key, value in response_dict.items()
         }
     )
-
-    return hashlib.sha256(string.encode()).hexdigest()
+    print(hashlib.sha256(string.encode()).hexdigest())
+    return res_id, hashlib.sha256(string.encode()).hexdigest()
 
 
 async def validate_hash(previous_hash: str, current_data: Dict) -> bool:
