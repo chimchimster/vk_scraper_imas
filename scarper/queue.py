@@ -88,11 +88,8 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
 
                 if task_name == 'VKUser':
 
-                    tasks = [
-                        asyncio.create_task(
-                            user_handler(json.loads(model.json()))
-                        ) for model in validated_models
-                    ]
+                    x = await users_handler([json.loads(model.json()) for model in validated_models])
+                    print(x)
 
                 elif task_name == 'SubscribedToGroup':
 
