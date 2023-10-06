@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, SmallInteger, String, Text, Date, JSON, ForeignKey, UniqueConstraint, Boolean
+from sqlalchemy import Column, Integer, BigInteger, SmallInteger, String, Text, Date, JSON, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.orm import declarative_base, relationship
 
 
@@ -28,9 +28,9 @@ class UserEvent(BaseModel):
 
     __tablename__ = 'source_user_event'
 
-    event_time = Column(Integer, primary_key=True)
+    event_time = Column(BigInteger, primary_key=True)
     event_type = Column(String(length=255), primary_key=True)
-    event_value = Column(String(length=255), primary_key=True)
+    event_value = Column(Text, primary_key=True)
 
     res_id = Column(Integer, ForeignKey('source.res_id'))
     source = relationship('Source', back_populates='user_event')
@@ -60,7 +60,6 @@ class UserProfile(BaseModel):
     birth_date = Column(Date)
     profile_image = Column(Text)
     info_json = Column(JSON)
-    alerts = Column(String(length=20))
 
     user_subscription = relationship('UserSubscription', back_populates='user')
 

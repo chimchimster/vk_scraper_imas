@@ -2,6 +2,7 @@ import json
 import hashlib
 
 from typing import Dict
+from datetime import datetime
 
 
 DYNAMIC_DATA = [
@@ -22,6 +23,16 @@ async def generate_hash(response_dict: Dict):
 
     await cleanup()
 
-    string = json.dumps(response_dict)
+    string = json.dumps(
+        {
+            key: value.strftime('%Y-%m-%d %H:%M:%S') if isinstance(value, datetime)
+            else value for key, value in response_dict.items()
+        }
+    )
 
     return hashlib.sha256(string.encode()).hexdigest()
+
+
+async def validate_hash(previous_hash: str, current_data: Dict) -> bool:
+
+    return previous_hash == await generate_hash(current_data)

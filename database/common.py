@@ -125,18 +125,38 @@ async def handle_birthdate(birth_date: str) -> Union[datetime, None]:
     if len(date_of_birth) < 3:
         return
 
-    def number_checker(number: str):
-        if len(number) < 2:
-            number = '0' + number
-        return number
+    async def number_checker(nbr: str):
+        if len(nbr) < 2:
+            nbr = '0' + nbr
+        return nbr
 
     universalized = []
     for date in date_of_birth:
-        universalized.append(number_checker(date))
+        number = await number_checker(date)
+        universalized.append(number)
 
     return datetime.strptime('.'.join(universalized), "%d.%m.%Y")
 
 
+async def flat_dict(data_dict: Dict) -> Dict:
+
+    flt_dict = {}
+    for key, value in data_dict.items():
+        if isinstance(value, dict):
+            nested_items = await flat_dict(value)
+            flt_dict.update(nested_items)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    nested_items = await flat_dict(item)
+                    flt_dict.update(nested_items)
+        else:
+            flt_dict[key] = value
+
+    return flt_dict
+
+
 __all__ = [
     'prepare_data',
+    'flat_dict',
 ]

@@ -4,14 +4,13 @@ import asyncio
 
 from typing import Any, Final, Dict, Type, List
 
-from vk_scraper_imas.hash import generate_hash
-from vk_scraper_imas.utils import read_schema
+from vk_scraper_imas.utils import *
+from vk_scraper_imas.scarper import *
 from vk_scraper_imas.database import *
-from vk_scraper_imas.scarper import connector
-from .tasks import TasksDistributor
 from vk_scraper_imas.api.models import *
-from vk_scraper_imas.scarper.token.rate_limits import APIRateLimitsValidator
 from vk_scraper_imas.api.utils.signals import *
+from vk_scraper_imas.scarper.token.rate_limits import *
+
 
 RATE_LIMIT: Final[int] = 3
 
@@ -104,13 +103,6 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                     ]
 
                 await asyncio.gather(*tasks)
-                # tasks = [asyncio.create_task(generate_hash(json.loads(model.json()))) for model in validated_models]
-                #
-                # result = await asyncio.gather(*tasks)
-                # print(result)
-                #
-                # result = await insert_hashes_of_users_by_source_id(result)
-                # print(result)
 
         except Exception as e:
             sys.stderr.write(f"An error occurred: {str(e)}")
