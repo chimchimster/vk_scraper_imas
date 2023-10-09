@@ -69,7 +69,7 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
 
                 print(mapped_prev_and_cur_users_data[0][0])
                 print(mapped_prev_and_cur_users_data[0][1])
-
+                print(1)
                 tasks = [
                     generate_event(prev_user_data, cur_user_data)
                     for prev_user_data, cur_user_data in mapped_prev_and_cur_users_data
