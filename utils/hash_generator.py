@@ -4,24 +4,13 @@ import hashlib
 from typing import Dict
 from datetime import datetime
 
-
-DYNAMIC_DATA = [
-    'followers_count',
-    'last_seen',
-]
+from .common import cleanup
 
 
-async def generate_hash(response_dict: Dict):
+async def generate_hash(res_id: int, response_dict: Dict):
     """ Генерация ключа по входным данным. """
 
-    async def cleanup():
-        """ Необходимо отчистить входной словарь от динамических данных. """
-
-        for key in DYNAMIC_DATA:
-            if key in response_dict:
-                response_dict.pop(key)
-
-    await cleanup()
+    response_dict = await cleanup(response_dict)
 
     string = json.dumps(
         {
@@ -30,9 +19,9 @@ async def generate_hash(response_dict: Dict):
         }
     )
 
-    return hashlib.sha256(string.encode()).hexdigest()
+    return res_id, hashlib.sha256(string.encode()).hexdigest()
 
 
-async def validate_hash(previous_hash: str, current_data: Dict) -> bool:
+async def validate_hash(res_id: int, previous_hash: str, current_data: Dict) -> bool:
 
-    return previous_hash == await generate_hash(current_data)
+    return previous_hash == await generate_hash(res_id, current_data)
