@@ -30,9 +30,9 @@ class UserEvent(BaseModel):
 
     event_time = Column(BigInteger, primary_key=True)
     event_type = Column(String(length=255), primary_key=True)
-    event_value = Column(Text, primary_key=True)
+    event_value = Column(Text)
 
-    res_id = Column(Integer, ForeignKey('source.res_id'))
+    res_id = Column(Integer, ForeignKey('source.res_id'), primary_key=True, index=True)
     source = relationship('Source', back_populates='user_event')
 
 

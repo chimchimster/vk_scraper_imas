@@ -5,7 +5,7 @@ from datetime import datetime
 
 from typing import List, Tuple, Dict, Set, Union, Sequence, Any
 
-from sqlalchemy import select, func, insert, Row, join, and_
+from sqlalchemy import select, func, insert, Row, join, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import *
@@ -39,11 +39,76 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
     )
 
     res_ids_which_are_not_in_database = users_exist.get('not_in_database')
+    res_ids_which_are_in_database = users_exist.get('in_database')
 
     if res_ids_which_are_not_in_database:
         await insert_user_profiles(users_data, res_ids_which_are_not_in_database, session)
         await insert_user_hashes(users_data, res_ids_which_are_not_in_database, session)
         await insert_events(users_data, res_ids_which_are_not_in_database, session)
+
+    if res_ids_which_are_in_database:
+        old_res_ids_and_hashes = await get_old_res_ids_and_hashes_of_users(res_ids_which_are_in_database)
+        new_res_ids_and_hashes = await get_new_res_ids_and_hashes_of_users(users_data, res_ids_which_are_in_database)
+
+        hashes_which_changed = old_res_ids_and_hashes.difference(new_res_ids_and_hashes)
+
+        if hashes_which_changed:
+            print('Изменился хэш')
+            users_res_ids_which_hashes_changed = {res_id_hash[0] for res_id_hash in hashes_which_changed}
+
+            users_data_which_hashes_changed = await get_users_data_which_hashes_changed(
+                users_data,
+                users_res_ids_which_hashes_changed,
+            )
+            if users_res_ids_which_hashes_changed:
+
+                mapped_prev_and_cur_users_data = await map_prev_and_cur_users_data(
+                    users_data,
+                    users_data_which_hashes_changed,
+                )
+
+                print(mapped_prev_and_cur_users_data[0][0])
+                print(mapped_prev_and_cur_users_data[0][1])
+
+                tasks = [
+                    generate_event(prev_user_data, cur_user_data)
+                    for prev_user_data, cur_user_data in mapped_prev_and_cur_users_data
+                ]
+
+                new_events_generated = await asyncio.gather(*tasks)
+
+                new_events_generated = [event for event in new_events_generated if event]
+
+                if new_events_generated:
+                    await insert_events(new_events_generated, users_res_ids_which_hashes_changed, session)
+
+
+async def map_prev_and_cur_users_data(prev_users_data: List[Dict], cur_users_data: List[Dict]):
+
+    mapped_user_data = []
+
+    gen_key_id_for_cur_users_data = {
+        cur_dct.get('id'): {key: value for key, value in cur_dct.items()}
+        for cur_dct in cur_users_data
+    }
+
+    gen_key_id_for_prev_users_data = {
+        prev_dct.get('id'): {key: value for key, value in prev_dct.items()}
+        for prev_dct in prev_users_data
+    }
+
+    for key in gen_key_id_for_cur_users_data.keys():
+
+        if key in gen_key_id_for_prev_users_data:
+
+            mapped_user_data.append(
+                (
+                    gen_key_id_for_cur_users_data[key],
+                    gen_key_id_for_prev_users_data[key],
+                )
+            )
+
+    return mapped_user_data
 
 
 async def get_unique_identifiers(data: List[Dict]) -> Set[int]:
@@ -137,7 +202,11 @@ async def insert_user_profiles(
         await session.execute(insert_stmt)
 
 
-async def insert_user_hashes(users_data: List[Dict], res_ids: Set[int], session: AsyncSession) -> None:
+async def insert_user_hashes(
+        users_data: List[Dict],
+        res_ids: Set[int],
+        session: AsyncSession,
+) -> None:
 
     select_stmt = select(Source.res_id, Source.source_id).where(Source.res_id.in_(res_ids))
 
@@ -177,7 +246,19 @@ async def insert_user_hashes(users_data: List[Dict], res_ids: Set[int], session:
     await session.execute(insert_stmt)
 
 
-async def insert_events(users_data: List[Dict], res_ids: Set[int], session: AsyncSession) -> None:
+async def insert_events(
+        users_data: Union[List[Dict], Tuple[Dict]],
+        res_ids: Set[int],
+        session: AsyncSession,
+) -> None:
+
+    tasks = [
+        asyncio.create_task(
+            cleanup(user_data)
+        ) for user_data in users_data
+    ]
+
+    users_data = await asyncio.gather(*tasks)
 
     select_stmt = select(Source.res_id, Source.source_id).where(Source.res_id.in_(res_ids))
     res_id_mapping = await session.execute(select_stmt)
@@ -203,6 +284,107 @@ async def insert_events(users_data: List[Dict], res_ids: Set[int], session: Asyn
 
     insert_stmt = insert(UserEvent).values(map_events)
     await session.execute(insert_stmt)
+
+
+@execute_transaction
+async def get_old_res_ids_and_hashes_of_users(res_ids: Set[int], **kwargs) -> Set[Tuple[int, str]]:
+    session = kwargs.get('session')
+
+    stmt = select(ScrapperHash.res_id, ScrapperHash.social_info_hash).where(ScrapperHash.res_id.in_(res_ids))
+
+    result = await session.execute(stmt)
+
+    res_ids_and_hashes = result.fetchall()
+
+    return set(res_ids_and_hashes)
+
+
+@execute_transaction
+async def get_new_res_ids_and_hashes_of_users(
+        users_data: List[Dict],
+        res_ids: Set[int],
+        **kwargs,
+) -> Set[Tuple[int, str]]:
+
+    session = kwargs.get('session')
+
+    select_stmt = select(Source.res_id, Source.source_id).where(Source.res_id.in_(res_ids))
+
+    res_id_mapping = await session.execute(select_stmt)
+
+    res_id_mapping = {row[1]: row[0] for row in res_id_mapping.fetchall()}
+
+    map_res_ids_and_hashes = []
+    for user_data in users_data:
+        source_id = user_data.get('id')
+        res_id = res_id_mapping.get(source_id)
+        to_relational_fields, json_field = await prepare_data(user_data, flag='user')
+        to_relational_fields.pop('id')
+        if res_id is not None:
+            prepared_data = {}
+            prepared_data.update(to_relational_fields)
+            prepared_data.update((json.loads(json_field)))
+            map_res_ids_and_hashes.append((res_id, prepared_data))
+
+    tasks = [
+        asyncio.create_task(
+            generate_hash(*res_id_and_hash)
+        ) for res_id_and_hash in map_res_ids_and_hashes
+    ]
+
+    generated_hashes = await asyncio.gather(*tasks)
+
+    return set(generated_hashes)
+
+
+@execute_transaction
+async def get_users_data_which_hashes_changed(
+        users_data: List[Dict],
+        res_ids: Set[int],
+        **kwargs,
+) -> List[Dict]:
+
+    session = kwargs.pop('session')
+
+    stmt = select(Source.source_id).where(Source.res_id.in_(res_ids))
+
+    result = await session.execute(stmt)
+
+    source_ids = [tpl[0] for tpl in result.fetchall()]
+
+    return [user_data for user_data in users_data if user_data.get('id') in source_ids]
+
+
+async def update_profiles_which_hashes_changed(
+        users_data: List[Dict],
+        res_ids: Set[int],
+        session: AsyncSession,
+) -> None:
+
+    select_stmt = select(Source.res_id, Source.source_id).where(Source.res_id.in_(res_ids))
+
+    res_id_mapping = await session.execute(select_stmt)
+    res_id_mapping = {row[1]: row[0] for row in res_id_mapping.fetchall()}
+
+    users_profiles_to_update = []
+    for user_data in users_data:
+        source_id = user_data.get('id')
+        res_id = res_id_mapping.get(source_id)
+        to_relational_fields, to_json_field = await prepare_data(user_data, flag='user')
+
+        if res_id is not None:
+            user_profile = {
+                'res_id': res_id,
+                'info_json': to_json_field
+            }
+
+            to_relational_fields.pop('id')
+            user_profile.update(to_relational_fields)
+            users_profiles_to_update.append(user_profile)
+
+    if users_profiles_to_update:
+        stmt = update(UserProfile).values(users_profiles_to_update)
+        await session.execute(stmt)
 
 
 @execute_transaction
