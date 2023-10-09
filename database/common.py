@@ -50,6 +50,7 @@ async def prepare_data(
             mapping_dict=MAP_VK_KEYS_AND_USER_PROFILE_DATABASE_FIELDS,
         )
         to_json_field = await cleanup_data(data, delta=True, mapping_keys=KEYS_NAMES_FOR_CLEANING_USER_UP)
+        to_json_field.pop('last_seen')
     else:
         to_relational_fields = await cleanup_data(
             data,
