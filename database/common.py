@@ -36,7 +36,7 @@ MAP_VK_KEYS_AND_SUBSCRIPTION_PROFILE_DATABASE_FIELDS: Final[Dict] = {
 async def prepare_data(
     data: Dict,
     flag: str = None,
-) -> Tuple[Dict, str]:
+) -> Union[Tuple[Dict, str], Tuple[Dict, str, int]]:
 
     if flag == 'user':
         to_relational_fields = await cleanup_data(
@@ -51,6 +51,8 @@ async def prepare_data(
         )
         to_json_field = await cleanup_data(data, delta=True, mapping_keys=KEYS_NAMES_FOR_CLEANING_USER_UP)
         to_json_field.pop('last_seen')
+        json_field = json.dumps(to_json_field)
+        return to_relational_fields_mapped, json_field
     else:
         to_relational_fields = await cleanup_data(
             data,
@@ -63,10 +65,9 @@ async def prepare_data(
             mapping_dict=MAP_VK_KEYS_AND_SUBSCRIPTION_PROFILE_DATABASE_FIELDS,
         )
         to_json_field = await cleanup_data(data, delta=True, mapping_keys=KEYS_NAMES_FOR_CLEANING_SUBSCRIPTION_UP)
-
-    json_field = json.dumps(to_json_field)
-
-    return to_relational_fields_mapped, json_field
+        source_id = to_relational_fields_mapped.pop('id')
+        json_field = json.dumps(to_json_field)
+        return to_relational_fields_mapped, json_field, source_id
 
 
 async def cleanup_data(

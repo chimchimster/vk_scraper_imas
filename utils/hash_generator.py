@@ -3,7 +3,7 @@ import hashlib
 
 from typing import Dict
 from datetime import datetime
-
+from datetime import date
 from .common import cleanup
 
 
@@ -14,7 +14,7 @@ async def generate_hash(res_id: int, response_dict: Dict):
 
     string = json.dumps(
         {
-            key: value.strftime('%Y-%m-%d %H:%M:%S') if isinstance(value, datetime)
+            key: value.strftime('%d-%m-%Y') if isinstance(value, date)
             else value for key, value in response_dict.items()
         }
     )

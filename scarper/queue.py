@@ -88,8 +88,11 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
 
                 if task_name == 'VKUser':
 
-                    x = await users_handler([json.loads(model.json()) for model in validated_models])
-                    print(x)
+                    await users_handler(
+                        [
+                            json.loads(model.json()) for model in validated_models
+                        ]
+                    )
 
                 # elif task_name == 'SubscribedToGroup':
                 #
@@ -99,7 +102,7 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                 #         ) for model in validated_models
                 #     ]
                 #
-                # await asyncio.gather(*tasks)
+                #     await asyncio.gather(*tasks)
 
         except Exception as e:
             sys.stderr.write(f"An error occurred: {str(e)}")
