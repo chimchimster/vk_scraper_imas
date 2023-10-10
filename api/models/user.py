@@ -1,4 +1,4 @@
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict
 
 from .common import *
 
@@ -36,3 +36,4 @@ class VKUser(Base):
     sex: Optional[Union[int, None]] = None
     site: Optional[Union[str, None]] = None
     status: Optional[Union[str, None]] = None
+

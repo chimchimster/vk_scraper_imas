@@ -54,7 +54,7 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
             res_ids_which_are_in_database,
             session,
         )
-        print(old_res_ids_and_hashes, new_res_ids_and_hashes)
+
         hashes_which_changed = old_res_ids_and_hashes.difference(new_res_ids_and_hashes)
 
         if hashes_which_changed:
@@ -86,7 +86,7 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
                 new_events_generated = [event for event in new_events_generated if event]
 
                 if new_events_generated:
-                    print(new_events_generated)
+
                     await insert_upcoming_events(
                         new_events_generated,
                         session,
@@ -100,7 +100,6 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
                         incoming_users_data_for_profiles,
                         session,
                     )
-
                     await update_user_hashes_which_has_been_changed(
                         users_res_ids_which_hashes_changed,
                         incoming_users_data_for_hashes,
@@ -110,6 +109,7 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
 
 @execute_transaction
 async def subscription_handler(user_subscription: Dict, user_source_id: int, **kwargs) -> None:
+
     session = kwargs.pop('session')
 
     to_relational_fields_mapped, json_field, subscription_source_id = await prepare_data(
@@ -144,6 +144,10 @@ async def subscription_handler(user_subscription: Dict, user_source_id: int, **k
 
         if not has_connection:
             await create_connection_between_user_and_subscription(user_res_id, subscription_res_id, session)
+
+            await insert_subscription_into_source_subscription_profile(
+                subscription_res_id, to_relational_fields_mapped, json_field, session
+            )
 
 
 @execute_transaction
