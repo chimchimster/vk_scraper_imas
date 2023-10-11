@@ -18,6 +18,7 @@ class Source(BaseModel):
     scrapper_hash = relationship('ScrapperHash', back_populates='source', uselist=False)
     user_profile = relationship('UserProfile', back_populates='source', uselist=False)
     subscription_profile = relationship('SubscriptionProfile', back_populates='source', uselist=False)
+    last_seen = relationship('LastSeen', back_populates='source', uselist=False)
 
     __table_args__ = (
         UniqueConstraint(source_id, name='source_id'),
@@ -92,3 +93,25 @@ class UserSubscription(BaseModel):
 
     user = relationship('UserProfile', back_populates='user_subscription')
     subscription = relationship('SubscriptionProfile', back_populates='subscription_profile')
+
+
+class LastSeen(BaseModel):
+
+    __tablename__ = 'user_last_seen'
+
+    res_id = Column(Integer, ForeignKey('source.res_id'), primary_key=True)
+    time = Column(BigInteger)
+    platform = Column(Integer)
+
+    source = relationship('Source', back_populates='last_seen')
+
+
+__all__ = [
+    'Source',
+    'UserEvent',
+    'ScrapperHash',
+    'UserProfile',
+    'SubscriptionProfile',
+    'UserSubscription',
+    'LastSeen',
+]

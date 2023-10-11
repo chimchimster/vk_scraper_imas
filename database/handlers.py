@@ -41,8 +41,11 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
         await insert_user_profiles(users_data, res_ids_which_are_not_in_database, session)
         await insert_user_hashes(users_data, res_ids_which_are_not_in_database, session)
         await insert_initial_events(users_data, res_ids_which_are_not_in_database, session)
+        await handle_last_seen(users_data, res_ids_which_are_in_database, session, flag='insert')
 
     if res_ids_which_are_in_database:
+
+        await handle_last_seen(users_data, res_ids_which_are_in_database, session, flag='update')
 
         old_res_ids_and_hashes = await get_old_res_ids_and_hashes_of_users(
             res_ids_which_are_in_database,
@@ -79,7 +82,7 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
                     users_data_which_hashes_changed_from_database,
                 )
 
-                new_events_generated = await generate_events_from_mapped_upcoming_and_database_data(
+                new_events_generated = await generate_events_from_mapped_incoming_and_database_data(
                     mapped_prev_and_cur_users_data,
                 )
 
@@ -87,7 +90,7 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
 
                 if new_events_generated:
 
-                    await insert_upcoming_events(
+                    await insert_incoming_events(
                         new_events_generated,
                         session,
                     )
@@ -100,6 +103,7 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
                         incoming_users_data_for_profiles,
                         session,
                     )
+
                     await update_user_hashes_which_has_been_changed(
                         users_res_ids_which_hashes_changed,
                         incoming_users_data_for_hashes,
@@ -156,8 +160,12 @@ async def get_source_ids(offset: int, limit: int, source_type: int = 1, **kwargs
 
     session = kwargs.get('session')
 
-    stmt = select(Source.source_id).where(Source.source_type == source_type).order_by(Source.res_id).offset(
-        offset).limit(limit)
+    stmt = (
+        select(Source.source_id).where(Source.source_type == source_type).
+        order_by(Source.res_id).
+        offset(offset).
+        limit(limit)
+    )
 
     chunked_iterator_result = await session.execute(stmt)
 

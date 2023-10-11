@@ -62,7 +62,10 @@ async def create_connection_between_user_and_subscription(
     await session.execute(stmt)
 
 
-async def check_if_subscription_exists(subscription_source_id: int, session: AsyncSession) -> bool:
+async def check_if_subscription_exists(
+        subscription_source_id: int,
+        session: AsyncSession,
+) -> bool:
     """ Проверка на наличия группы по API айди Вконтакте. """
 
     stmt = select(Source.res_id).filter_by(source_id=subscription_source_id)
@@ -212,7 +215,7 @@ async def insert_event_into_source_user_event(
     await session.execute(stmt)
 
 
-async def insert_upcoming_events(events: List[Dict], session):
+async def insert_incoming_events(events: List[Dict], session):
     id_mapping = {}
 
     source_ids = [dct.get('id') for dct in events]
@@ -619,7 +622,7 @@ async def preprocess_users_data_from_database(users_data):
     return preprocessed_users_data
 
 
-async def generate_events_from_mapped_upcoming_and_database_data(
+async def generate_events_from_mapped_incoming_and_database_data(
         mapped_data: List[Tuple[Dict, Dict]]
 ):
     tasks = [
@@ -656,13 +659,13 @@ async def update_user_hashes_which_has_been_changed(
         intermediate_dict = {}
 
         for res_id, response_dict in user_data.items():
+            if res_id:
+                response_dict['birth_date'] = datetime.strptime(response_dict['birth_date'], '%d.%m.%Y')
+                info_json = response_dict.pop('info_json')
+                intermediate_dict.update(response_dict)
+                intermediate_dict.update(info_json)
 
-            response_dict['birth_date'] = datetime.strptime(response_dict['birth_date'], '%d.%m.%Y')
-            info_json = response_dict.pop('info_json')
-            intermediate_dict.update(response_dict)
-            intermediate_dict.update(info_json)
-
-            tasks.append(generate_hash(res_id, intermediate_dict))
+                tasks.append(generate_hash(res_id, intermediate_dict))
 
     res_ids_new_hashes = await asyncio.gather(*tasks)
 
@@ -675,7 +678,6 @@ async def update_user_hashes_which_has_been_changed(
 
     insert_stmt = insert_mysql(ScrapperHash).values(mapped_res_ids_hashes)
     insert_stmt = insert_stmt.on_duplicate_key_update(
-        res_id=insert_stmt.inserted.res_id,
         social_info_hash=insert_stmt.inserted.social_info_hash,
     )
 
@@ -699,18 +701,17 @@ async def update_users_profiles_which_hashes_changed(
             ): user_data
         } for user_data in users_data
     ]
-    print(user_data_ids_mapped)
     mapped_to_update = []
     for user_data in user_data_ids_mapped:
         intermediate_dict = {}
         for key, value in user_data.items():
-            # TODO: ПРОДОЛЖИТЬ ОТСЮДА!
             if key:
                 value['birth_date'] = datetime.strptime(value['birth_date'], '%d.%m.%Y')
                 value['info_json'] = json.dumps(value['info_json'])
                 intermediate_dict.update(value)
                 intermediate_dict.update({'res_id': key})
-        mapped_to_update.append(intermediate_dict)
+        if intermediate_dict:
+            mapped_to_update.append(intermediate_dict)
 
     insert_stmt = insert_mysql(UserProfile).values(mapped_to_update)
     insert_stmt = insert_stmt.on_duplicate_key_update(
@@ -724,6 +725,53 @@ async def update_users_profiles_which_hashes_changed(
     )
 
     await session.execute(insert_stmt)
+
+
+async def handle_last_seen(
+        users_data: List[Dict],
+        res_ids: Set[int],
+        session: AsyncSession,
+        flag: str = 'insert',
+):
+
+    stmt = select(Source.source_id, Source.res_id).where(Source.res_id.in_(res_ids))
+    result = await session.execute(stmt)
+
+    mapped_source_and_res_ids = [{source_id: res_id} for source_id, res_id in result.fetchall()]
+
+    mapped_users_data = {}
+    for user_data in users_data:
+        source_id = user_data.get('id')
+        mapped_users_data[source_id] = user_data
+
+    mapped_res_id_last_seen = []
+    for mapped_source_and_res_id in mapped_source_and_res_ids:
+        for source_id, res_id in mapped_source_and_res_id.items():
+
+            has_last_seen = mapped_users_data.get(source_id).get('last_seen')
+            if has_last_seen:
+                mapped_res_id_last_seen.append(
+                    {
+                        'res_id': res_id,
+                        'time': has_last_seen.get('time'),
+                        'platform': has_last_seen.get('platform')
+                    }
+                )
+
+    if flag == 'insert':
+        insert_stmt = insert(LastSeen).values(mapped_res_id_last_seen)
+        await session.execute(insert_stmt)
+    elif flag == 'update':
+        insert_stmt = insert_mysql(LastSeen).values(mapped_res_id_last_seen)
+        update_stmt = insert_stmt.on_duplicate_key_update(
+            time=insert_stmt.inserted.time,
+            platform=insert_stmt.inserted.platform,
+        )
+        await session.execute(update_stmt)
+
+
+async def handle_subscription__is_valid():
+    pass
 
 
 __all__ = [
@@ -756,10 +804,11 @@ __all__ = [
     'insert_vk_api_identifiers_which_are_not_in_database',
     'lead_user_data_to_single_representation',
     'map_pairs_of_incoming_and_existing_in_database_users_data',
-    'insert_upcoming_events',
+    'insert_incoming_events',
     'check_if_vk_api_identifiers_exist_in_database',
     'preprocess_users_data_from_database',
-    'generate_events_from_mapped_upcoming_and_database_data',
+    'generate_events_from_mapped_incoming_and_database_data',
     'update_user_hashes_which_has_been_changed',
     'update_users_profiles_which_hashes_changed',
+    'handle_last_seen',
 ]
