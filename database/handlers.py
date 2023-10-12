@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import List, Tuple, Dict
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, and_
 
 from .models import *
 from .common import *
@@ -155,13 +155,24 @@ async def subscription_handler(user_subscription: Dict, user_source_id: int, **k
 
 
 @execute_transaction
-async def get_source_ids(offset: int, limit: int, source_type: int = 1, **kwargs) -> List[Tuple]:
+async def get_source_ids(
+        offset: int,
+        limit: int,
+        source_type: int = 1,
+        soc_type: int = 1,
+        **kwargs,
+) -> List[Tuple]:
     """ Получение уникальных идентификаторов соцсети Вконтакте пользователей. """
 
     session = kwargs.get('session')
 
     stmt = (
-        select(Source.source_id).where(Source.source_type == source_type).
+        select(Source.source_id).
+        where(
+            and_(
+                Source.source_type == source_type, Source.soc_type == soc_type
+            )
+        ).
         order_by(Source.res_id).
         offset(offset).
         limit(limit)
@@ -175,13 +186,22 @@ async def get_source_ids(offset: int, limit: int, source_type: int = 1, **kwargs
 
 
 @execute_transaction
-async def get_source_ids_count(source_type: int = 1, **kwargs) -> int:
+async def get_source_ids_count(
+        source_type: int = 1,
+        soc_type: int = 1,
+        **kwargs
+) -> int:
     """ Получение общего количества доступных source_id.
         :source_id: идентификатор пользовтеля/группы Вконтакте. """
 
     session = kwargs.get('session')
 
-    stmt = select(func.count(Source.source_id)).select_from(Source).where(Source.source_type == source_type)
+    stmt = select(func.count(Source.source_id)).select_from(Source).where(
+        and_(
+            Source.source_type == source_type,
+            Source.soc_type == soc_type
+        )
+    )
 
     count = await session.execute(stmt)
 

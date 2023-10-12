@@ -8,7 +8,7 @@ from database import *
 from utils import read_schema
 from scarper import TasksDistributor, worker, connector
 
-SOURCE_IDS_OFFSET: Final[int] = 1500
+SOURCE_IDS_OFFSET: Final[int] = 100
 
 
 async def main():

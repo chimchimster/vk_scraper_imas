@@ -320,8 +320,7 @@ async def check_if_vk_api_identifiers_exist_in_database(vk_api_identifiers: Set[
 
     in_database = {data[0] for data in result.fetchall()}
     not_in_database = vk_api_identifiers.difference(in_database)
-    print(in_database)
-    print(not_in_database)
+
     return {
         'in_database': in_database,
         'not_in_database': not_in_database,
@@ -660,7 +659,11 @@ async def update_user_hashes_which_has_been_changed(
 
         for res_id, response_dict in user_data.items():
             if res_id:
-                response_dict['birth_date'] = datetime.strptime(response_dict['birth_date'], '%d.%m.%Y')
+                bdate = response_dict.get('birth_date')
+                if bdate:
+                    response_dict['birth_date'] = datetime.strptime(response_dict['birth_date'], '%d.%m.%Y')
+                else:
+                    response_dict['birth_date'] = None
                 info_json = response_dict.pop('info_json')
                 intermediate_dict.update(response_dict)
                 intermediate_dict.update(info_json)
@@ -706,8 +709,12 @@ async def update_users_profiles_which_hashes_changed(
         intermediate_dict = {}
         for key, value in user_data.items():
             if key:
-                value['birth_date'] = datetime.strptime(value['birth_date'], '%d.%m.%Y')
-                value['info_json'] = json.dumps(value['info_json'])
+                bdate = value.get('birth_date')
+                if bdate:
+                    value['birth_date'] = datetime.strptime(bdate, '%d.%m.%Y')
+                else:
+                    value['birth_date'] = None
+                value['info_json'] = json.dumps(value.get('info_json'))
                 intermediate_dict.update(value)
                 intermediate_dict.update({'res_id': key})
         if intermediate_dict:
@@ -750,6 +757,7 @@ async def handle_last_seen(
 
             has_last_seen = mapped_users_data.get(source_id).get('last_seen')
             if has_last_seen:
+
                 mapped_res_id_last_seen.append(
                     {
                         'res_id': res_id,
