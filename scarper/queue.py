@@ -20,7 +20,8 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue, task_di
 
     semaphore = asyncio.Semaphore(10)
 
-    while True:
+    while not tasks_queue.empty():
+
         tasks = await tasks_queue.get()
 
         token = await token_queue.get()
@@ -30,10 +31,6 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue, task_di
         async_tasks = [process_task(task_distributor, task, token, rate_limited, semaphore) for task in tasks]
 
         await asyncio.gather(*async_tasks)
-
-        await tasks_queue.put(tasks)
-
-        await asyncio.sleep(1)
 
 
 async def process_task(task_distributor, task, token, rate_limited, semaphore):
