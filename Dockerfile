@@ -1,6 +1,6 @@
-FROM python3.10-slim
+FROM python:3.10-slim
 WORKDIR .
-COPY . requirements.txt
-RUN pip install -r requirements.txt --no-cahce-dir
-COPY vk_scraper_imas .
-CMD ["python3", "vk_scarper_imas/app.py"]
+COPY requirements.txt .
+RUN pip install -r requirements.txt --no-cache-dir
+COPY . vk_scraper_imas
+CMD ["python3", "vk_scraper_imas/app.py"]

@@ -2,7 +2,7 @@ import json
 import sys
 from functools import wraps
 from typing import Awaitable, Optional, Callable
-from vk_scraper_imas.api.exceptions import VKAPIException
+from api.exceptions import VKAPIException
 from .signals import *
 import aiohttp
 

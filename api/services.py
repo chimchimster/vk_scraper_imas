@@ -3,9 +3,9 @@ import pathlib
 
 from pydantic import ValidationError
 
-from vk_scraper_imas.api.models import VKUser, SubscribedToGroup, ResponseModel, SubscribedToUser
-from vk_scraper_imas.utils import read_schema
-from vk_scraper_imas.api.utils import do_post_request_to_vk_api
+from api.models import VKUser, SubscribedToGroup, ResponseModel, SubscribedToUser
+from utils import read_schema
+from api.utils import do_post_request_to_vk_api
 
 
 class APIAsyncRequests:

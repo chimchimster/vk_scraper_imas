@@ -17,14 +17,14 @@ class Connector:
 
 @dataclass
 class TokenStorage:
-    path_to_tokens: pathlib.Path = pathlib.Path.cwd() / 'scarper' / 'token' / 'schemas' / 'tokens.JSON'
+    path_to_tokens: pathlib.Path = pathlib.Path('vk_scraper_imas') / 'scarper' / 'token' / 'schemas' / 'tokens.JSON'
 
 
 schemas = Schemas(
-    pathlib.Path.cwd() / 'api' / 'schemas' / 'user_fields.JSON',
-    pathlib.Path.cwd() / 'api' / 'schemas' / 'group_fields.JSON',
-    pathlib.Path.cwd() / 'scarper' / 'token' / 'schemas' / 'tokens.JSON',
-    pathlib.Path.cwd() / 'scarper' / 'token' / 'schemas' / 'rate_limited.JSON'
+    pathlib.Path('vk_scraper_imas') / 'api' / 'schemas' / 'user_fields.JSON',
+    pathlib.Path('vk_scraper_imas') / 'api' / 'schemas' / 'group_fields.JSON',
+    pathlib.Path('vk_scraper_imas') / 'scarper' / 'token' / 'schemas' / 'tokens.JSON',
+    pathlib.Path('vk_scraper_imas') / 'scarper' / 'token' / 'schemas' / 'rate_limited.JSON'
 )
 
 connector = Connector(schemas)

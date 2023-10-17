@@ -4,12 +4,12 @@ import asyncio
 
 from typing import Any, Final, Dict, Type, List
 
-from vk_scraper_imas.utils import *
-from vk_scraper_imas.scarper import *
-from vk_scraper_imas.database import *
-from vk_scraper_imas.api.models import *
-from vk_scraper_imas.api.utils.signals import *
-from vk_scraper_imas.scarper.token.rate_limits import *
+from utils import *
+from scarper import *
+from database import *
+from api.models import *
+from api.utils.signals import *
+from scarper.token.rate_limits import *
 
 
 RATE_LIMIT: Final[int] = 3

@@ -1,6 +1,6 @@
 from typing import List, Awaitable, Type, Union, Final, Dict
-from vk_scraper_imas.api.services import APIAsyncRequests
-from vk_scraper_imas.api.models import *
+from api.services import APIAsyncRequests
+from api.models import *
 
 RATE_LIMIT: Final[int] = 3
 

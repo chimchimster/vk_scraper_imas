@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import create_async_engine
-from vk_scraper_imas.database.config import config
+from database.config import config
 
 
 class MySQLEngine:
