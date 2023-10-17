@@ -84,9 +84,6 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
                     validated_data = task_model.model_validate(response_data)
                     validated_models.append(validated_data)
 
-                # for model in validated_models:
-                #     print(model.json(), end='\n')
-
                 if task_name == 'VKUser':
 
                     await users_handler(

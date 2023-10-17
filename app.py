@@ -15,17 +15,17 @@ async def main():
 
     task_distributor = TasksDistributor()
 
-    while True:
+    tokens = await read_schema(connector.schemas.path_to_tokens, 'tokens')
 
-        tokens = await read_schema(connector.schemas.path_to_tokens, 'tokens')
+    tasks_queue, tokens_queue = Queue(), Queue()
+
+    for token in tokens:
+        await tokens_queue.put(token)
+
+    while True:
 
         user_fields = await read_schema(connector.schemas.user_fields, 'user_fields')
         group_fields = await read_schema(connector.schemas.group_fields, 'group_fields')
-
-        tasks_queue, tokens_queue = Queue(), Queue()
-
-        for token in tokens:
-            await tokens_queue.put(token)
 
         source_ids_count = await get_source_ids_count()
 
@@ -34,7 +34,7 @@ async def main():
         for iteration in range(iteration_count):
 
             source_ids = await get_source_ids(SOURCE_IDS_OFFSET * iteration, SOURCE_IDS_OFFSET)
-            print(source_ids)
+
             source_ids = list(map(int, [fetched_id[-1] for fetched_id in source_ids]))
 
             task_objs_vk_user = await task_distributor.group(

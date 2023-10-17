@@ -18,7 +18,7 @@ def execute_transaction(insert: bool = False, update: bool = False):
         @wraps(coro)
         async def inner_wrapper(*args, **kwargs):
 
-            await engine_sqlite3.create_bd_if_not_exists()
+            await engine_sqlite3.create_db_if_not_exists()
 
             async with AsyncSessionLocal() as session:
                 async with session.begin() as transaction:
