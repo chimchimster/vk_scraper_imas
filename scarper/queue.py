@@ -16,6 +16,7 @@ RATE_LIMIT: Final[int] = 3
 
 
 async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue, task_distributor: TasksDistributor):
+
     rate_limited = await read_schema(connector.schemas.rate_limited, 'rate_limited')
 
     semaphore = asyncio.Semaphore(10)
@@ -32,8 +33,11 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue, task_di
 
         await asyncio.gather(*async_tasks)
 
+        tasks_queue.task_done()
+
 
 async def process_task(task_distributor, task, token, rate_limited, semaphore):
+
     task_model = task.model
     task_name = task.model.__name__
 
