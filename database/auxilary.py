@@ -116,7 +116,7 @@ async def insert_subscription_into_source(subscription_source_id: int, session: 
         soc_type=1,
         source_id=subscription_source_id,
         source_type=2,
-    )
+    ).prefix_with("IGNORE")
 
     await session.execute(stmt)
 
@@ -448,13 +448,6 @@ async def insert_initial_events(
         res_ids: Set[int],
         session: AsyncSession,
 ) -> None:
-    tasks = [
-        asyncio.create_task(
-            cleanup(user_data)
-        ) for user_data in users_data
-    ]
-
-    users_data = await asyncio.gather(*tasks)
 
     select_stmt = select(Source.res_id, Source.source_id).where(Source.res_id.in_(res_ids))
     res_id_mapping = await session.execute(select_stmt)
@@ -468,15 +461,16 @@ async def insert_initial_events(
 
         flatten_dict = await flat_dict(user_data)
         now = int(time.time())
-        events = [
-            {
-                'event_time': now,
-                'res_id': res_id,
-                'event_type': key,
-                'event_value': value.strftime('%Y-%m-%d %H:%M:%S') if isinstance(value, datetime) else value
-            } for key, value in flatten_dict.items()
-        ]
-        map_events.extend(events)
+        if res_id:
+            events = [
+                {
+                    'event_time': now,
+                    'res_id': res_id,
+                    'event_type': key,
+                    'event_value': value.strftime('%Y-%m-%d %H:%M:%S') if isinstance(value, datetime) else value
+                } for key, value in flatten_dict.items()
+            ]
+            map_events.extend(events)
 
     insert_stmt = insert(UserEvent).values(map_events)
     await session.execute(insert_stmt)
@@ -748,6 +742,7 @@ async def handle_last_seen(
 
     mapped_users_data = {}
     for user_data in users_data:
+
         source_id = user_data.get('id')
         mapped_users_data[source_id] = user_data
 
@@ -756,6 +751,7 @@ async def handle_last_seen(
         for source_id, res_id in mapped_source_and_res_id.items():
 
             has_last_seen = mapped_users_data.get(source_id).get('last_seen')
+
             if has_last_seen:
 
                 mapped_res_id_last_seen.append(

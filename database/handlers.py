@@ -39,8 +39,11 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
     if res_ids_which_are_not_in_database:
 
         await insert_user_profiles(users_data, res_ids_which_are_not_in_database, session)
+
         await insert_user_hashes(users_data, res_ids_which_are_not_in_database, session)
+
         await insert_initial_events(users_data, res_ids_which_are_not_in_database, session)
+
         await handle_last_seen(users_data, res_ids_which_are_not_in_database, session, flag='insert')
 
     if res_ids_which_are_in_database:
