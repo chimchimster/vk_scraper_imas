@@ -1,11 +1,4 @@
-import asyncio
-import pathlib
-
-from pydantic import ValidationError
-
-from api.models import VKUser, SubscribedToGroup, ResponseModel, SubscribedToUser
-from utils import read_schema
-from api.utils import do_post_request_to_vk_api
+from vk_scraper_imas.api.utils import do_post_request_to_vk_api
 
 
 class APIAsyncRequests:

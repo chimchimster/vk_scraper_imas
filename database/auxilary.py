@@ -11,7 +11,7 @@ from sqlalchemy.dialects.mysql import insert as insert_mysql
 
 from .models import *
 from .common import *
-from utils import *
+from vk_scraper_imas.utils import *
 
 
 async def get_vk_user_res_id(

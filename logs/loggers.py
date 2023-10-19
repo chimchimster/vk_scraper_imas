@@ -1,22 +1,18 @@
 import aiohttp
 
 from logging import Formatter
-from aiologger import Logger
+from aiologger.loggers.json import JsonLogger
 
 from .config import authorization
 
 
-stream_logger = Logger.with_default_handlers(
+stream_logger = JsonLogger.with_default_handlers(
     name='stream',
-    level='DEBUG',
-    formatter=Formatter(
-        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%d-%m-%Y %H:%M:%S"
-    ),
+    serializer_kwargs={'ensure_ascii': False},
 )
 
 
-class TelegramLogger(Logger):
+class TelegramLogger(JsonLogger):
 
     token = authorization.vk_token.get_secret_value()
     chat_id = authorization.chat_id.get_secret_value()
@@ -31,5 +27,5 @@ class TelegramLogger(Logger):
 
 telegram_logger = TelegramLogger.with_default_handlers(
     name='telegram',
-    level='CRITICAL',
+    serializer_kwargs={'ensure_ascii': False},
 )

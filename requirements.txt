@@ -6,3 +6,4 @@ pydantic==2.4.2
 pydantic_settings==2.0.3
 SQLAlchemy==2.0.21
 SQLAlchemy-Utils==0.41.1
+aiologger==0.7.0

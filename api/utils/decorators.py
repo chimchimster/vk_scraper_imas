@@ -1,10 +1,12 @@
 import json
-import sys
+import aiohttp
+
 from functools import wraps
 from typing import Awaitable, Optional, Callable
-from api.exceptions import VKAPIException
+
+from vk_scraper_imas.api.exceptions import VKAPIException
+from vk_scraper_imas.logs import stream_logger
 from .signals import *
-import aiohttp
 
 
 def do_post_request_to_vk_api(func: Optional[Callable[..., Awaitable[None]]]):
@@ -31,14 +33,14 @@ def do_post_request_to_vk_api(func: Optional[Callable[..., Awaitable[None]]]):
                             return response_json
                         return signal
                     else:
-                        sys.stderr.write(f"HTTP POST завершился со статус кодом {response.status}")
+                        await stream_logger.info(f"HTTP POST завершился со статус кодом {response.status}")
 
         except aiohttp.ServerTimeoutError as ste:
-            sys.stderr.write(str(ste))
+            await stream_logger.info(str(ste))
         except aiohttp.ServerConnectionError as sce:
-            sys.stderr.write(str(sce))
+            await stream_logger.info(str(sce))
         except VKAPIException as vk_api_exc:
-            sys.stderr.write(str(vk_api_exc))
+            await stream_logger.info(str(vk_api_exc))
 
     return wrapper
 
@@ -46,7 +48,6 @@ def do_post_request_to_vk_api(func: Optional[Callable[..., Awaitable[None]]]):
 async def check_errors(response_json):
     if response_json.get('error'):
         error_code = response_json['error']['error_code']
-        sys.stderr.write(str(VKAPIException(error_code)))
 
         if error_code == 29:
             return RateLimitSignal()
@@ -54,6 +55,8 @@ async def check_errors(response_json):
             return PrivateProfileSignal()
         if error_code == 18:
             return PageLockedOrDeletedSignal()
+        if error_code == 5:
+            return AuthorizationFailedSignal()
 
     return None
 

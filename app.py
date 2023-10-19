@@ -6,12 +6,10 @@ from asyncio import Queue
 
 from database import *
 from utils import read_schema
+from logs import stream_logger
 from scarpper import TasksDistributor, worker, connector
 
 SOURCE_IDS_OFFSET: Final[int] = 1500
-
-
-from logs import *
 
 
 async def main():
@@ -20,10 +18,7 @@ async def main():
 
     tokens = await read_schema(connector.schemas.path_to_tokens, 'tokens')
 
-    tasks_queue, tokens_queue = Queue(), Queue()
-
-    for token in tokens:
-        await tokens_queue.put(token)
+    tasks_queue = Queue()
 
     while True:
 
@@ -61,7 +56,7 @@ async def main():
             for task in task_objs:
                 await tasks_queue.put(task)
 
-        await worker(tasks_queue, tokens_queue, task_distributor)
+        await worker(tasks_queue, tokens, task_distributor, logger=stream_logger)
 
 if __name__ == '__main__':
     asyncio.run(main())
