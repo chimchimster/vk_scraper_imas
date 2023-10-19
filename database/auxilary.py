@@ -770,9 +770,9 @@ async def handle_last_seen(
         insert_stmt = insert(LastSeen).values(mapped_res_id_last_seen)
         await session.execute(insert_stmt)
     elif flag == 'update':
-        print(mapped_res_id_last_seen)
         insert_stmt = insert_mysql(LastSeen).values(mapped_res_id_last_seen)
         update_stmt = insert_stmt.on_duplicate_key_update(
+            res_id=insert_stmt.inserted.res_id,
             time=insert_stmt.inserted.time,
             platform=insert_stmt.inserted.platform,
         )

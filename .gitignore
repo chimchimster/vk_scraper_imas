@@ -1,3 +1,4 @@
 database/.env
-scarper/token/schemas/tokens.JSON
+logs/.env
+scarpper/token/schemas/tokens.JSON
 states.db

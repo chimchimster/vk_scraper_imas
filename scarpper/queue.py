@@ -1,15 +1,16 @@
 import json
 import sys
 import asyncio
+import time
 
 from typing import Any, Final, Dict, Type, List
 
 from utils import *
-from scarper import *
+from scarpper import *
 from database import *
 from api.models import *
 from api.utils.signals import *
-from scarper.token.rate_limits import *
+from .token.rate_limits import *
 
 
 RATE_LIMIT: Final[int] = 3
@@ -19,24 +20,43 @@ async def worker(tasks_queue: asyncio.Queue, token_queue: asyncio.Queue, task_di
 
     rate_limited = await read_schema(connector.schemas.rate_limited, 'rate_limited')
 
-    semaphore = asyncio.Semaphore(10)
+    semaphore = asyncio.Semaphore(20)
 
     while not tasks_queue.empty():
 
-        tasks = await tasks_queue.get()
+        async_tasks = []
 
-        token = await token_queue.get()
+        buffer_token_queue = asyncio.Queue()
 
-        await token_queue.put(token)
+        while not token_queue.empty():
 
-        async_tasks = [process_task(task_distributor, task, token, rate_limited, semaphore) for task in tasks]
+            tasks = await tasks_queue.get()
 
+            token = await token_queue.get()
+
+            await buffer_token_queue.put(token)
+
+            for task in tasks:
+                if task:
+                    async_tasks.append(process_task(task_distributor, task, token, rate_limited, semaphore))
+
+            tasks_queue.task_done()
+            token_queue.task_done()
+
+        while not buffer_token_queue.empty():
+            token = await buffer_token_queue.get()
+            await token_queue.put(token)
+
+        start_time = time.perf_counter()
+        print('Выполняется задач: ', len(async_tasks), ' Время начала выполнения: ', start_time)
         await asyncio.gather(*async_tasks)
+        end_time = time.perf_counter()
+        print('Выполнилось задач: ', len(async_tasks), ' Время завершения выполнения', end_time - start_time)
 
-        tasks_queue.task_done()
+async def process_task(task_distributor, task, token, rate_limited, semaphore) -> None:
 
-
-async def process_task(task_distributor, task, token, rate_limited, semaphore):
+    if not task:
+        return
 
     task_model = task.model
     task_name = task.model.__name__
@@ -56,7 +76,7 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore):
             if any(
                     map(
                         lambda signal: isinstance(result_response, signal),
-                        [PrivateProfileSignal, PageLockedOrDeletedSignal]
+                        [PrivateProfileSignal, PageLockedOrDeletedSignal, AuthorizationFailedSignal]
                     )
             ):
                 return

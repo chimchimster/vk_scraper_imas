@@ -1,14 +1,17 @@
-import asyncio
 import math
+import asyncio
 
 from typing import Final
 from asyncio import Queue
 
 from database import *
 from utils import read_schema
-from scarper import TasksDistributor, worker, connector
+from scarpper import TasksDistributor, worker, connector
 
 SOURCE_IDS_OFFSET: Final[int] = 1500
+
+
+from logs import *
 
 
 async def main():
@@ -45,7 +48,7 @@ async def main():
             )
 
             task_objs_subscribed_to_group = await task_distributor.group(
-                list(map(int, source_ids)),
+                source_ids,
                 'SubscribedToGroup',
                 fields=group_fields,
                 coroutine_name='get_subscriptions_of_user_by_vk_id'

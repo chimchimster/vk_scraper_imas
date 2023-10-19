@@ -20,8 +20,13 @@ class PageLockedOrDeletedSignal:
     """ Сигнал оповещающий о том, что профиль заблокирован, либо удален. """
 
 
+class AuthorizationFailedSignal:
+    """ Сигнал оповещающий о том, что токен невалиден. """
+
+
 __all__ = [
     'RateLimitSignal',
     'PrivateProfileSignal',
     'PageLockedOrDeletedSignal',
+    'AuthorizationFailedSignal',
 ]
