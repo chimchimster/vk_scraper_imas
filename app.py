@@ -50,7 +50,7 @@ async def main():
             )
 
             task_objs = []
-            task_objs.extend(task_objs_vk_user)
+            # task_objs.extend(task_objs_vk_user)
             task_objs.extend(task_objs_subscribed_to_group)
 
             for task in task_objs:

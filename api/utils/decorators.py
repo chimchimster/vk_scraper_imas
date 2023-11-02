@@ -24,7 +24,9 @@ def do_post_request_to_vk_api(func: Optional[Callable[..., Awaitable[None]]]):
             ) as session:
                 async with session.post(request_string) as response:
                     if response.status == 200:
+
                         response_str = await response.text()
+
                         response_json = json.loads(response_str)
 
                         signal = await check_errors(response_json)
