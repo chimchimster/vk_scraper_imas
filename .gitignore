@@ -2,3 +2,4 @@ database/.env
 logs/.env
 scarpper/token/schemas/tokens.JSON
 states.db
+*__pycache__/
