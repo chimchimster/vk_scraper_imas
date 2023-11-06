@@ -29,15 +29,13 @@ async def worker(
         zipped_tasks = []
 
         for token in tokens:
-
             tasks = await tasks_queue.get()
 
-            for task in tasks:
-                zipped_tasks.append((task, token))
-
-            tasks_queue.task_done()
-
-            if tasks_queue.empty():
+            if tasks:
+                for task in tasks:
+                    zipped_tasks.append((task, token))
+                tasks_queue.task_done()
+            else:
                 break
 
         async_tasks = [
