@@ -10,6 +10,8 @@ from logs import stream_logger
 from scarpper import TasksDistributor, worker, connector
 
 SOURCE_IDS_OFFSET: Final[int] = 1500
+SUBSCRIPTION_LIMIT: Final[int] = 10000
+SUBSCRIPTION_OFFSET: Final[int] = 200
 
 
 async def main():
@@ -19,6 +21,7 @@ async def main():
     tokens = await read_schema(connector.schemas.path_to_tokens, 'tokens')
 
     tasks_queue = Queue()
+    start_offset = 0
 
     while True:
 
@@ -56,7 +59,14 @@ async def main():
             for task in task_objs:
                 await tasks_queue.put(task)
 
-        await worker(tasks_queue, tokens, task_distributor, logger=stream_logger)
+        await worker(tasks_queue, tokens, task_distributor, logger=stream_logger, offset=start_offset)
+
+        if start_offset <= SUBSCRIPTION_LIMIT:
+            start_offset += SUBSCRIPTION_OFFSET
+        else:
+            start_offset = 0
+
+        print(start_offset)
 
 if __name__ == '__main__':
     asyncio.run(main())
