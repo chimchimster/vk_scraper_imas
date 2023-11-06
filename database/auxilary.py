@@ -68,9 +68,10 @@ async def check_if_subscription_exists(
 ) -> bool:
     """ Проверка на наличия группы по API айди Вконтакте. """
 
-    stmt = select(Source.res_id).filter_by(source_id=subscription_source_id)
+    stmt = select(Source).filter_by(source_id=subscription_source_id)
     result = await session.execute(stmt)
-    result = result.scalar()
+
+    result = result.scalar_one_or_none()
 
     if result:
         return True
@@ -91,6 +92,8 @@ async def check_if_connection_between_user_and_subscription_exists(
 
     result = await session.execute(stmt)
 
+    result = result.scalar_one_or_none()
+
     if not result:
         return False
     return True
@@ -106,12 +109,13 @@ async def insert_subscription_into_source_subscription_profile(
         res_id=subscription_res_id,
         **to_relational_fields_mapped,
         info_json=json_field,
-    )
+    ).prefix_with("IGNORE")
 
     await session.execute(stmt)
 
 
 async def insert_subscription_into_source(subscription_source_id: int, session: AsyncSession) -> None:
+
     stmt = insert(Source).values(
         soc_type=1,
         source_id=subscription_source_id,
