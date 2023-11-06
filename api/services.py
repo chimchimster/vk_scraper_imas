@@ -26,6 +26,7 @@ class APIAsyncRequests:
 
         fields = kwargs.pop('fields')
         token = kwargs.pop('token')
+        offset = kwargs.pop('offset')
 
         return await self.form_request_string(
             'users.getSubscriptions',
@@ -33,6 +34,7 @@ class APIAsyncRequests:
             fields=','.join(fields),
             extended=1,
             count=200,
+            offset=offset,
             access_token=token,
             v=5.131,
         )

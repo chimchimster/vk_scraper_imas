@@ -18,10 +18,11 @@ async def worker(
         tokens: List[str],
         task_distributor: TasksDistributor,
         logger=None,
+        offset: int = None,
 ):
     rate_limited = await read_schema(connector.schemas.rate_limited, 'rate_limited')
 
-    semaphore = asyncio.Semaphore(50)
+    semaphore = asyncio.Semaphore(25)
 
     while not tasks_queue.empty():
 
@@ -41,16 +42,14 @@ async def worker(
 
         async_tasks = [
             asyncio.create_task(
-                process_task(task_distributor, task, token, rate_limited, semaphore, logger)
+                process_task(task_distributor, task, token, rate_limited, semaphore, logger, offset=offset)
             ) for task, token in zipped_tasks
         ]
 
-        await logger.info(f'Выполняется {len(async_tasks)} задач.')
         await asyncio.gather(*async_tasks)
-        await logger.info(f'Выполненно {len(async_tasks)} задач.')
 
 
-async def process_task(task_distributor, task, token, rate_limited, semaphore, logger) -> None:
+async def process_task(task_distributor, task, token, rate_limited, semaphore, logger, offset=None) -> None:
 
     task_model = task.model
     task_name = task.model.__name__
@@ -64,7 +63,7 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore, l
     async with (semaphore):
         try:
             result_response = await task_distributor.call_api_method(
-                task.coroutine_name, task.user_ids, fields=task.fields, token=token,
+                task.coroutine_name, task.user_ids, fields=task.fields, token=token, offset=offset,
             )
 
             if any(
