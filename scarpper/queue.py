@@ -88,7 +88,7 @@ async def process_task(task_distributor, task, token, rate_limited, semaphore, l
 
         else:
             result_response = await task_distributor.call_api_method(
-                task.coroutine_name, task.user_ids, fields=task.fields, token=token,
+                task.coroutine_name, task.user_ids, fields=task.fields, token=token, offset=offset,
             )
 
         if any(

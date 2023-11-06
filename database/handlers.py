@@ -147,6 +147,7 @@ async def subscription_handler(user_subscription: Dict, user_source_id: int, **k
         )
 
         if not has_connection:
+
             await create_connection_between_user_and_subscription(user_res_id, subscription_res_id, session)
 
             await insert_subscription_into_source_subscription_profile(
