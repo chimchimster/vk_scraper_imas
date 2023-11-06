@@ -53,7 +53,7 @@ async def main():
             )
 
             task_objs = []
-            task_objs.extend(task_objs_vk_user)
+            # task_objs.extend(task_objs_vk_user)
             task_objs.extend(task_objs_subscribed_to_group)
 
             for task in task_objs:
@@ -65,7 +65,6 @@ async def main():
             start_offset += SUBSCRIPTION_OFFSET
         else:
             start_offset = 0
-
 
 if __name__ == '__main__':
     asyncio.run(main())
