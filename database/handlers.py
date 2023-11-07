@@ -118,9 +118,9 @@ async def subscription_handler(user_subscription: Dict, user_source_id: int, **k
 
     to_relational_fields_mapped, json_field, subscription_source_id = await prepare_data(
         user_subscription,
-        flag='subscription',
+        flag='user',
     )
-
+    print(to_relational_fields_mapped)
     subscription_exists = await check_if_subscription_exists(subscription_source_id, session)
 
     user_res_id = await get_vk_user_res_id(user_source_id, session)
