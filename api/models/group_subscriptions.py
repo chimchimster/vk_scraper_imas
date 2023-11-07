@@ -18,4 +18,5 @@ class SubscribedToGroup(Base):
     members_count: Optional[Union[int, None]] = None
     site: Optional[Union[str, None]] = None
     status: Optional[Union[str, None]] = None
+    type: Optional[Union[str, None]] = None
 

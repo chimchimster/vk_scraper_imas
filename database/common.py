@@ -90,7 +90,6 @@ async def map_api_keys_with_database_fields(vk_dict: Dict, flag: str = None, map
     for key, value in vk_dict.items():
 
         if flag == 'user' and key in ('first_name', 'last_name'):
-
             to_relational_fields_dict['user_name'] += value + ' '
             continue
 
