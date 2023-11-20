@@ -13,7 +13,6 @@ SOURCE_IDS_OFFSET: Final[int] = 1500
 SUBSCRIPTION_LIMIT: Final[int] = 10000
 SUBSCRIPTION_OFFSET: Final[int] = 200
 
-
 async def main():
 
     task_distributor = TasksDistributor()
@@ -21,6 +20,7 @@ async def main():
     tokens = await read_schema(connector.schemas.path_to_tokens, 'tokens')
 
     tasks_queue = Queue()
+
     start_offset = 0
 
     while True:
@@ -53,7 +53,7 @@ async def main():
             )
 
             task_objs = []
-            # task_objs.extend(task_objs_vk_user)
+            task_objs.extend(task_objs_vk_user)
             task_objs.extend(task_objs_subscribed_to_group)
 
             for task in task_objs:
@@ -68,4 +68,3 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
-

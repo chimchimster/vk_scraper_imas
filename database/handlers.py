@@ -39,8 +39,11 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
     if res_ids_which_are_not_in_database:
 
         await insert_user_profiles(users_data, res_ids_which_are_not_in_database, session)
+
         await insert_user_hashes(users_data, res_ids_which_are_not_in_database, session)
+
         await insert_initial_events(users_data, res_ids_which_are_not_in_database, session)
+
         await handle_last_seen(users_data, res_ids_which_are_not_in_database, session, flag='insert')
 
     if res_ids_which_are_in_database:
@@ -118,9 +121,9 @@ async def subscription_handler(user_subscription: Dict, user_source_id: int, **k
 
     to_relational_fields_mapped, json_field, subscription_source_id = await prepare_data(
         user_subscription,
-        flag='user',
+        flag='subscription',
     )
-    print(to_relational_fields_mapped)
+
     subscription_exists = await check_if_subscription_exists(subscription_source_id, session)
 
     user_res_id = await get_vk_user_res_id(user_source_id, session)
@@ -147,7 +150,6 @@ async def subscription_handler(user_subscription: Dict, user_source_id: int, **k
         )
 
         if not has_connection:
-
             await create_connection_between_user_and_subscription(user_res_id, subscription_res_id, session)
 
             await insert_subscription_into_source_subscription_profile(
