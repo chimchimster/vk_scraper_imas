@@ -50,7 +50,6 @@ def do_post_request_to_vk_api(func: Optional[Callable[..., Awaitable[None]]]):
 async def check_errors(response_json):
     if response_json.get('error'):
         error_code = response_json['error']['error_code']
-
         if error_code == 29:
             return RateLimitSignal()
         if error_code == 30:

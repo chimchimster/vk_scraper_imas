@@ -37,7 +37,6 @@ async def users_handler(users_data: List[Dict], **kwargs) -> None:
     res_ids_which_are_in_database = users_exist.get('in_database')
 
     if res_ids_which_are_not_in_database:
-
         await insert_user_profiles(users_data, res_ids_which_are_not_in_database, session)
 
         await insert_user_hashes(users_data, res_ids_which_are_not_in_database, session)

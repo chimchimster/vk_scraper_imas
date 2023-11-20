@@ -31,7 +31,7 @@ async def worker(
         for token in tokens:
 
             tasks = await tasks_queue.get()
-            print(tasks)
+
             for task in tasks:
                 zipped_tasks.append((task, token))
 

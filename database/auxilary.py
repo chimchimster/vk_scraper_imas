@@ -628,6 +628,7 @@ async def preprocess_users_data_from_database(users_data):
 async def generate_events_from_mapped_incoming_and_database_data(
         mapped_data: List[Tuple[Dict, Dict]]
 ):
+
     tasks = [
         generate_event(prev_user_data, cur_user_data)
         for prev_user_data, cur_user_data in mapped_data

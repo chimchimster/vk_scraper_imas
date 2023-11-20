@@ -14,7 +14,7 @@ class VKUser(Base):
     about: Optional[Union[str, None]] = None
     activities: Optional[Union[str, None]] = None
     bdate: Optional[Union[str, None]] = None
-    career: Optional[Union[CareerInfo, List]] = None
+    career: Optional[List[CareerInfo]] = None
     city: Optional[Union[CityInfo, List[CityInfo]]] = None
     connections: Optional[Union[ConnectionsInfo, List]] = None
     contacts: Optional[Union[ContactsInfo, List]] = None
